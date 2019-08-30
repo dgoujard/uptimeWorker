@@ -16,9 +16,10 @@ type QueueWorker struct {
 	amqCo *amqp.Connection
 	amqQueueName string
 	amqConcurentRuntime int
+	uptimeService *uptimeService
 }
 
-func CreateQueueWorker(config *config.AmqConfig,queueService *QueueService)  *QueueWorker  {
+func CreateQueueWorker(config *config.AmqConfig, queueService *QueueService, uptime *uptimeService) *QueueWorker {
 	connection, err := amqp.Dial(config.Uri)
 	if err != nil {
 		log.Println("Dial: %s", err)
@@ -33,6 +34,7 @@ func CreateQueueWorker(config *config.AmqConfig,queueService *QueueService)  *Qu
 		amqQueueName:config.QueueName,
 		amqConcurentRuntime:config.ConcurentRuntime,
 		queueService: queueService,
+		uptimeService: uptime,
 	}
 }
 
@@ -65,6 +67,7 @@ func (q *QueueWorker) StartAmqWatching() {
 				if err := json.Unmarshal(d.Body, &site); err != nil {
 					log.Printf("TaskMessage json not valid  %v.", err)
 				}
+				q.uptimeService.CheckSite(site)
 				//TODO créer/utiliser le service uptimeService
 				d.Ack(false)
 			}

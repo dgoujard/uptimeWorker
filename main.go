@@ -52,11 +52,16 @@ func main() {
 
 	databaseService := services.CreateDatabaseConnection(&configFile.Database)
 	queueService := services.CreateQueueService(&configFile.Amq)
-	queueWorker := services.CreateQueueWorker(&configFile.Amq,queueService)
+	uptimeService := services.CreateUptimeService()
+	//queueWorker := services.CreateQueueWorker(&configFile.Amq,queueService,uptimeService)
 
 	if len(os.Args) > 1 && os.Args[1] == "withCron" {
 		cronService := services.CreateCronService(databaseService,queueService)
 		cronService.StartCronProcess()
 	}
-	queueWorker.StartAmqWatching()
+	test := services.SiteBdd{Url:"http://www.actigraph.com"}
+	//test := services.SiteBdd{Url:"http://ccinormandiedev.cartographie.pro"}
+	uptimeService.CheckSite(&test)
+
+	//queueWorker.StartAmqWatching()
 }
