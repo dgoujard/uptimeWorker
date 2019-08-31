@@ -8,7 +8,6 @@ import (
 	"log"
 	"os"
 	"os/signal"
-	"strconv"
 )
 
 type QueueWorker struct {
@@ -60,8 +59,8 @@ func (q *QueueWorker) StartAmqWatching() {
 	for i := 0; i < q.amqConcurentRuntime; i++ {
 		go func(runtimeIndex int) {
 			for d := range msgs {
-				log.Println("Runtime ID: " + strconv.Itoa(runtimeIndex))
-				log.Println(string(d.Body))
+				//log.Println("Runtime ID: " + strconv.Itoa(runtimeIndex))
+				//log.Println(string(d.Body))
 
 				site := &SiteBdd{}
 				if err := json.Unmarshal(d.Body, &site); err != nil {

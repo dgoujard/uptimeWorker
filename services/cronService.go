@@ -16,7 +16,7 @@ func CreateCronService(database *DatabaseService,queue *QueueService) *cronServi
 	}
 }
 func (c *cronService)StartCronProcess() {
-	ticker := time.NewTicker(5 * time.Second)
+	ticker := time.NewTicker(60 * time.Second)
 	go func() {
 		c.cronAddSitesToQueue()
 		for t := range ticker.C {

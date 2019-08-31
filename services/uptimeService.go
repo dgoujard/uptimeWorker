@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/tls"
 	"errors"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -35,9 +34,16 @@ func (u *uptimeService)CheckSite(site *SiteBdd){
 	var reqHeaders = headers{}
 	//reqHeaders = append(reqHeaders, "headername:value")
 	var redirectsFollowed = 0
-	var timeout = 500 * time.Millisecond
-	fmt.Println(visit(url, reqHeaders,&redirectsFollowed,u.maxRedirects,timeout,"",""))
-	os.Exit(0)
+	//var timeout = 500 * time.Millisecond
+	var timeout = 10 * time.Second
+	//log.Println(site.Url," Checking ")
+
+	err, httpCode, responseTime := visit(url,true, reqHeaders,&redirectsFollowed,u.maxRedirects,timeout,"","")
+	if err != nil || httpCode != 200 {
+		log.Println(site.Url," DOWN ",httpCode," ",err,"(",responseTime,")")
+	}else{
+		log.Println(site.Url," up (",responseTime,")")
+	}
 }
 
 func parseURL(uri string) *url.URL {
@@ -62,11 +68,10 @@ func parseURL(uri string) *url.URL {
 
 // visit visits a url and times the interaction.
 // If the response is a 30x, visit follows the redirect.
-func visit(url *url.URL, httpHeaders headers, redirectsFollowed *int, maxRedirects int, timeoutAccepted time.Duration,responseMustContain string, responseMustNotCountain string) (visitErr error, httpCode int, totalTime time.Duration) {
+func visit(url *url.URL,retryOnceIfError bool, httpHeaders headers, redirectsFollowed *int, maxRedirects int, timeoutAccepted time.Duration,responseMustContain string, responseMustNotCountain string) (visitErr error, httpCode int, totalTime time.Duration) {
 	req := newRequest(http.MethodGet, url, "",httpHeaders) //changer la méthode ?
 
 	var t0, t1, t2, t3, t4, t5, t6 time.Time
-
 	trace := &httptrace.ClientTrace{
 		DNSStart: func(_ httptrace.DNSStartInfo) { t0 = time.Now() },
 		DNSDone:  func(_ httptrace.DNSDoneInfo) { t1 = time.Now() },
@@ -78,7 +83,7 @@ func visit(url *url.URL, httpHeaders headers, redirectsFollowed *int, maxRedirec
 		},
 		ConnectDone: func(net, addr string, err error) {
 			if err != nil {
-				log.Fatalf("unable to connect to host %v: %v", addr, err)
+				log.Println("unable to connect to host %v (%v): %v", addr,url, err)
 			}
 			t2 = time.Now()
 
@@ -89,36 +94,37 @@ func visit(url *url.URL, httpHeaders headers, redirectsFollowed *int, maxRedirec
 		TLSHandshakeDone:     func(_ tls.ConnectionState, _ error) { t6 = time.Now() },
 	}
 	req = req.WithContext(httptrace.WithClientTrace(context.Background(), trace))
+	req.Header.Set("User-Agent", "Golang_UpCheck/1.0")
+	req.Header.Set("Accept-Language", "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7")
 
+	/*
+	TODO Pour ajouter des autorité racine pour le controle SSL plus tard
+	//https://github.com/zakjan/cert-chain-resolver
+	//localCertFile = "/usr/local/internal-ca/ca.crt"
+	// Get the SystemCertPool, continue with an empty pool on error
+	rootCAs, _ := x509.SystemCertPool()
+	if rootCAs == nil {
+		rootCAs = x509.NewCertPool()
+	}
+
+	// Read in the cert file
+	certs, err := ioutil.ReadFile(localCertFile)
+	if err != nil {
+		log.Fatalf("Failed to append %q to RootCAs: %v", localCertFile, err)
+	}
+	*/
 	tr := &http.Transport{
 		Proxy:                 http.ProxyFromEnvironment,
 		MaxIdleConns:          100,
+		TLSClientConfig: 	   &tls.Config{
+			InsecureSkipVerify: true,
+			//RootCAs:            rootCAs,
+		}, //TODO On ignore erreurs SSL pour le moment car quelques faux positif qui indique down alors que ça marche
 		IdleConnTimeout:       90 * time.Second,
 		TLSHandshakeTimeout:   10 * time.Second,
 		ExpectContinueTimeout: 1 * time.Second,
 	}
-/*
-peut etre pas nécessaire car pas d'envoi de certificat client
-	switch url.Scheme {
-	case "https":
-		host, _, err := net.SplitHostPort(req.Host)
-		if err != nil {
-			host = req.Host
-		}
 
-		tr.TLSClientConfig = &tls.Config{
-			ServerName:         host,
-			InsecureSkipVerify: false,
-			Certificates:       nil,
-		}
-
-		// Because we create a custom TLSClientConfig, we have to opt-in to HTTP/2.
-		// See https://github.com/golang/go/issues/14275
-		err = http2.ConfigureTransport(tr)
-		if err != nil {
-			log.Fatalf("failed to prepare transport for HTTP/2: %v", err)
-		}
-	}*/
 
 	client := &http.Client{
 		Transport: tr,
@@ -209,7 +215,7 @@ peut etre pas nécessaire car pas d'envoi de certificat client
 				// 30x but no Location to follow, give up.
 				return visitErr, httpCode, totalTime
 			}
-			log.Fatalf("unable to follow redirect: %v", err)
+			return errors.New("unable to follow redirect: "+err.Error()), httpCode, totalTime
 		}
 
 		*redirectsFollowed = *redirectsFollowed+1
@@ -218,7 +224,7 @@ peut etre pas nécessaire car pas d'envoi de certificat client
 			return errors.New("maximum number of redirects ("+strconv.Itoa(maxRedirects)+") followed"), httpCode, totalTime
 		}
 
-		return visit(loc,httpHeaders,redirectsFollowed, maxRedirects,timeoutAccepted,responseMustContain,responseMustNotCountain)
+		return visit(loc,true,httpHeaders,redirectsFollowed, maxRedirects,timeoutAccepted,responseMustContain,responseMustNotCountain)
 	}
 	visitErr = readResponseBody(req, resp,responseMustContain,responseMustNotCountain)
 	return visitErr, httpCode,totalTime
