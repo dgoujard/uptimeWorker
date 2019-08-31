@@ -44,7 +44,11 @@ func (u *uptimeCheckerService)CheckSite(site *SiteBdd) CheckSiteResponse {
 	//log.Println(site.Url," Checking ")
 
 	err, httpCode, duration := visit(urlSite, reqHeaders,&redirectsFollowed,u.maxRedirects,timeout,"","")
-	return CheckSiteResponse{Err:err.Error(),HttpCode:httpCode,Duration:FromDuration(duration)}
+	var errorMessage = "" //par defaut pas d'erreur
+	if err != nil {
+		errorMessage = err.Error()
+	}
+	return CheckSiteResponse{Err:errorMessage,HttpCode:httpCode,Duration:FromDuration(duration)}
 }
 
 func parseURL(uri string) *url.URL {
