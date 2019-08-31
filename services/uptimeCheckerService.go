@@ -20,6 +20,12 @@ type uptimeCheckerService struct {
 	maxRedirects int
 }
 
+type CheckSiteResponse struct {
+	Err error
+	HttpCode int
+	Duration time.Duration
+}
+
 func CreateUptimeCheckerService() *uptimeCheckerService {
 	return &uptimeCheckerService{
 		maxRedirects:10,
@@ -27,9 +33,9 @@ func CreateUptimeCheckerService() *uptimeCheckerService {
 }
 
 
-func (u *uptimeCheckerService)CheckSite(site *SiteBdd) (err error, httpCode int, responseTime time.Duration) {
+func (u *uptimeCheckerService)CheckSite(site *SiteBdd) CheckSiteResponse {
 	//TODO gerer les headers custom dans l'interogation du site (notamement pour l'authentification)
-	url := parseURL(site.Url)
+	urlSite := parseURL(site.Url)
 	var reqHeaders = headers{}
 	//reqHeaders = append(reqHeaders, "headername:value")
 	var redirectsFollowed = 0
@@ -37,7 +43,8 @@ func (u *uptimeCheckerService)CheckSite(site *SiteBdd) (err error, httpCode int,
 	var timeout = 10 * time.Second
 	//log.Println(site.Url," Checking ")
 
-	return visit(url, reqHeaders,&redirectsFollowed,u.maxRedirects,timeout,"","")
+	err, httpCode, duration := visit(urlSite, reqHeaders,&redirectsFollowed,u.maxRedirects,timeout,"","")
+	return CheckSiteResponse{Err:err,HttpCode:httpCode,Duration:duration}
 }
 
 func parseURL(uri string) *url.URL {
