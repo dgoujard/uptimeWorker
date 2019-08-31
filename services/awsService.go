@@ -2,14 +2,12 @@ package services
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/lambda"
 	"github.com/dgoujard/uptimeWorker/config"
 	"log"
-	"os"
 	"strings"
 )
 
@@ -28,27 +26,26 @@ func CreateAwsService(config *config.AwsConfig) *AwsService {
 	return &AwsService{session:sess}
 }
 
-func (a *AwsService)CallUptimeCheckLambdaFunc(arn string,site SiteBdd) *CheckSiteResponse {
+func (a *AwsService)CallUptimeCheckLambdaFunc(arn string,site *SiteBdd) (error,*CheckSiteResponse) {
 	tmpListArmParams := strings.Split(arn,":")
-
-	client := lambda.New(a.session, &aws.Config{Region: aws.String(tmpListArmParams[2])})
+	client := lambda.New(a.session, &aws.Config{Region: aws.String(tmpListArmParams[3])})
 
 	payload, err := json.Marshal(site)
 	if err != nil {
-		fmt.Println("Error marshalling request")
-		os.Exit(0)
+		log.Println("Error marshalling request")
+		return err, nil
 	}
 
-	result, err := client.Invoke(&lambda.InvokeInput{FunctionName: aws.String("uptimeCheck"), Payload: payload})
+	result, err := client.Invoke(&lambda.InvokeInput{FunctionName: aws.String(tmpListArmParams[6]), Payload: payload})
 	if err != nil {
-		fmt.Println("Error calling uptimeCheck")
-		os.Exit(0)
+		log.Println("Error calling Lambda")
+		return err, nil
 	}
 	var resultUptime CheckSiteResponse
 	err = json.Unmarshal(result.Payload,&resultUptime)
 	if err != nil {
-		fmt.Println("Error decoding réponse uptimeCheck")
-		os.Exit(0)
+		log.Println("Error decoding réponse uptimeCheck")
+		return err, nil
 	}
-	return &resultUptime
+	return nil,&resultUptime
 }

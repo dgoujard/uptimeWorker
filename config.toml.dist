@@ -5,7 +5,16 @@ user = "XXXX"
 password = "XXX"
 database = "XXX"
 
+[worker]
+enableLambdaRemoteCheck = false
+lambdaArn = "XXXX"
+
+[aws]
+accessKey = "XXXX"
+secretKey = "XXX"
+region = "eu-west-3"
+
 [amq]
 uri= "amqp://XXX:XXXXX@XXXX:5672/"
 queueName = "XXXXX"
-concurentRuntime=2
+concurentRuntime=10
