@@ -32,7 +32,6 @@ func CreateQueueService(config *config.AmqConfig) *QueueService {
 
 func (q *QueueService)AddSiteToAmqQueue(site SiteBdd, isPriority bool) {
 	jsonData, _ := json.Marshal(site)
-	//log.Println(string(jsonData))
 
 	err := q.amqCh.Publish("",q.amqQueueName,false,false,amqp.Publishing{
 		Headers:         amqp.Table{},

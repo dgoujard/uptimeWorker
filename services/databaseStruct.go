@@ -1,6 +1,8 @@
 package services
 
-import "go.mongodb.org/mongo-driver/bson/primitive"
+import (
+	"go.mongodb.org/mongo-driver/bson/primitive"
+)
 
 type SiteBdd struct{
 	Id primitive.ObjectID  `json:"_id,omitempty" bson:"_id,omitempty"`

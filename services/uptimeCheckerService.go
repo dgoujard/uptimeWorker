@@ -23,7 +23,7 @@ type uptimeCheckerService struct {
 type CheckSiteResponse struct {
 	Err error
 	HttpCode int
-	Duration time.Duration
+	Duration Duration
 }
 
 func CreateUptimeCheckerService() *uptimeCheckerService {
@@ -44,7 +44,7 @@ func (u *uptimeCheckerService)CheckSite(site *SiteBdd) CheckSiteResponse {
 	//log.Println(site.Url," Checking ")
 
 	err, httpCode, duration := visit(urlSite, reqHeaders,&redirectsFollowed,u.maxRedirects,timeout,"","")
-	return CheckSiteResponse{Err:err,HttpCode:httpCode,Duration:duration}
+	return CheckSiteResponse{Err:err,HttpCode:httpCode,Duration:FromDuration(duration)}
 }
 
 func parseURL(uri string) *url.URL {
