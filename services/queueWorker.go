@@ -15,10 +15,10 @@ type QueueWorker struct {
 	amqCo *amqp.Connection
 	amqQueueName string
 	amqConcurentRuntime int
-	uptimeService *uptimeService
+	uptimeService *UptimeService
 }
 
-func CreateQueueWorker(config *config.AmqConfig, queueService *QueueService, uptime *uptimeService) *QueueWorker {
+func CreateQueueWorker(config *config.AmqConfig, queueService *QueueService, uptime *UptimeService) *QueueWorker {
 	connection, err := amqp.Dial(config.Uri)
 	if err != nil {
 		log.Println("Dial: %s", err)
