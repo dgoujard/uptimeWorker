@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -11,6 +12,7 @@ import (
 	"net/http/httptrace"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -34,7 +36,7 @@ func (u *uptimeService)CheckSite(site *SiteBdd){
 	//reqHeaders = append(reqHeaders, "headername:value")
 	var redirectsFollowed = 0
 	var timeout = 500 * time.Millisecond
-	fmt.Println(visit(url, reqHeaders,&redirectsFollowed,u.maxRedirects,timeout))
+	fmt.Println(visit(url, reqHeaders,&redirectsFollowed,u.maxRedirects,timeout,"",""))
 	os.Exit(0)
 }
 
@@ -60,7 +62,7 @@ func parseURL(uri string) *url.URL {
 
 // visit visits a url and times the interaction.
 // If the response is a 30x, visit follows the redirect.
-func visit(url *url.URL, httpHeaders headers, redirectsFollowed *int, maxRedirects int, timeoutAccepted time.Duration) (visitErr error, httpCode int, totalTime time.Duration) {
+func visit(url *url.URL, httpHeaders headers, redirectsFollowed *int, maxRedirects int, timeoutAccepted time.Duration,responseMustContain string, responseMustNotCountain string) (visitErr error, httpCode int, totalTime time.Duration) {
 	req := newRequest(http.MethodGet, url, "",httpHeaders) //changer la méthode ?
 
 	var t0, t1, t2, t3, t4, t5, t6 time.Time
@@ -138,7 +140,7 @@ peut etre pas nécessaire car pas d'envoi de certificat client
 		totalTime = t7Err.Sub(t0)
 		return err, 0,totalTime
 	}
-	resp.Body.Close()
+	defer resp.Body.Close()
 
 	t7 := time.Now() // after read body
 	if t0.IsZero() {
@@ -146,10 +148,8 @@ peut etre pas nécessaire car pas d'envoi de certificat client
 		t0 = t1
 	}
 	totalTime = t7.Sub(t0)
-	httpCode=0
-	if resp != nil {
-		httpCode = resp.StatusCode
-	}
+	httpCode = resp.StatusCode
+
 
 	// print status line and headers
 
@@ -214,11 +214,13 @@ peut etre pas nécessaire car pas d'envoi de certificat client
 
 		*redirectsFollowed = *redirectsFollowed+1
 		if *redirectsFollowed > maxRedirects {
-			log.Fatalf("maximum number of redirects (%d) followed", maxRedirects)
+			//log.Fatalf("maximum number of redirects (%d) followed", maxRedirects)
+			return errors.New("maximum number of redirects ("+strconv.Itoa(maxRedirects)+") followed"), httpCode, totalTime
 		}
 
-		return visit(loc,httpHeaders,redirectsFollowed, maxRedirects,timeoutAccepted)
+		return visit(loc,httpHeaders,redirectsFollowed, maxRedirects,timeoutAccepted,responseMustContain,responseMustNotCountain)
 	}
+	visitErr = readResponseBody(req, resp,responseMustContain,responseMustNotCountain)
 	return visitErr, httpCode,totalTime
 
 }
@@ -260,19 +262,25 @@ func createBody(body string) io.Reader {
 // readResponseBody consumes the body of the response.
 // readResponseBody returns an informational message about the
 // disposition of the response body's contents.
-func readResponseBody(req *http.Request, resp *http.Response) string {
+func readResponseBody(req *http.Request, resp *http.Response,mustContainString string, mustNotCountainString string) error {
 	if isRedirect(resp) || req.Method == http.MethodHead {
-		return ""
+		return nil
 	}
-
-	w := ioutil.Discard
-
 	//TODO lecture du body pour le controle si contient bien la chaine de caracyére controlé
 
-	if _, err := io.Copy(w, resp.Body); err != nil && w != ioutil.Discard {
-		log.Fatalf("failed to read response body: %v", err)
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return err
 	}
-	return ""
+	bodyString := string(body)
+	if len(mustContainString) > 0 && !strings.Contains(bodyString, mustContainString) {
+		return errors.New("La réponse ne contient pas "+mustContainString)
+	}
+	if len(mustNotCountainString) > 0 && strings.Contains(bodyString, mustNotCountainString) {
+		return errors.New("La réponse  contient "+mustContainString)
+	}
+
+	return nil
 }
 
 func headerKeyValue(h string) (string, string) {

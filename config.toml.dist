@@ -1,29 +1,11 @@
 [database]
-server = "localhost"
-port = 3306
-user = "root"
-password = "root"
-database = "workspace"
-
-[deployApi]
-url = ""
-secret = ""
-baseImageForDeploy = "damien/amd64-deboxphp72node9"
-
-[centrifugo]
-apiEndpoint = ""
-apiSecret = ""
-
+server = "XXXX"
+port = 27017
+user = "XXXX"
+password = "XXX"
+database = "XXX"
 
 [amq]
-uri= "amqp://root:XXXXXX@176.31.100.134:5672/"
-queueName = "workspace_worker_queue_dev"
-concurentRuntime=1
-
-
-[s3]
-endPoint = "https://s3.app.dgoujard.fr"
-accessKey = "XXXX"
-secretKey = "CCCCCC"
-region = "us-east-1"
-bucket = "devbox"
+uri= "amqp://XXX:XXXXX@XXXX:5672/"
+queueName = "XXXXX"
+concurentRuntime=2

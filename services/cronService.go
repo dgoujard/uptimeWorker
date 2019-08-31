@@ -27,6 +27,7 @@ func (c *cronService)StartCronProcess() {
 }
 
 func (c *cronService)cronAddSitesToQueue() {
+	//TODO peut etre controllé la taille de la queue. S'il reste encore des checks à faire alors il n'y a pas assez de workers il faut pas ajouté les controles + faire un mail
 	liste := c.databaseService.GetSitesLis()
 	for _, site := range liste {
 		//TODO selon la config du site et le minute en cours ajouté dans les check ou pas
