@@ -4,10 +4,12 @@ import "log"
 
 type UptimeService struct {
 	checker *uptimeCheckerService
+	awsService *AwsService
 }
-func CreateUptimeService(uptimeChecker *uptimeCheckerService) *UptimeService {
+func CreateUptimeService(uptimeChecker *uptimeCheckerService, awsService *AwsService) *UptimeService {
 	return &UptimeService{
 		checker:uptimeChecker,
+		awsService: awsService,
 	}
 }
 
