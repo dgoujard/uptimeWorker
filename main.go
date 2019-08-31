@@ -55,15 +55,15 @@ func main() {
 	awsService := services.CreateAwsService(&configFile.Aws)
 	uptimeCheckerService := services.CreateUptimeCheckerService()
 	uptimeService := services.CreateUptimeService(&configFile.Worker,uptimeCheckerService,awsService)
-	//queueWorker := services.CreateQueueWorker(&configFile.Amq,queueService,uptimeService)
+	queueWorker := services.CreateQueueWorker(&configFile.Amq,queueService,uptimeService)
 
 	if len(os.Args) > 1 && os.Args[1] == "withCron" {
 		cronService := services.CreateCronService(databaseService,queueService)
 		cronService.StartCronProcess()
 	}
-	test := services.SiteBdd{Url:"http://www.actigraphSS.com"}
+/*	test := services.SiteBdd{Url:"http://www.actigraphSS.com"}
 	//fmt.Println(awsService.CallUptimeCheckLambdaFunc("arn:aws:lambda:eu-west-1:312046026144:function:uptimeCheck",test))
-//	test := services.SiteBdd{Url:"https://maelis.eu"}
+	test := services.SiteBdd{Url:"https://maelis.eu"}
 	uptimeService.CheckSite(&test)
 /*
 	for i := 0; i < 10; i++ {
@@ -72,5 +72,5 @@ func main() {
 		}()
 	}
 	time.Sleep(2*time.Second)*/
-	//queueWorker.StartAmqWatching()
+	queueWorker.StartAmqWatching()
 }
