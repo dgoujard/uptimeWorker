@@ -22,4 +22,5 @@ region = "eu-west-3"
 [amq]
 uri= "amqp://XXX:XXXXX@XXXX:5672/"
 queueName = "XXXXX"
+queueAlertName = "XX"
 concurentRuntime=10

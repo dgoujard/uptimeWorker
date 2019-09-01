@@ -8,15 +8,22 @@ import (
 	"time"
 )
 
+type UptimeAlerte struct {
+	Site *SiteBdd
+	ResultUptime *CheckSiteResponse
+	IsCurrentlyDown bool
+}
+
 type UptimeService struct {
 	checker *uptimeCheckerService
 	awsService *AwsService
+	queueService *QueueService
 	config *config.WorkerConfig
 	influx *influxdb.Client
 	influxBucket string
 	influxOrg string
 }
-func CreateUptimeService(config *config.WorkerConfig,uptimeChecker *uptimeCheckerService, awsService *AwsService) *UptimeService {
+func CreateUptimeService(config *config.WorkerConfig, uptimeChecker *uptimeCheckerService, awsService *AwsService, queueService *QueueService) *UptimeService {
 
 	var influx *influxdb.Client
 	var err error
@@ -34,6 +41,7 @@ func CreateUptimeService(config *config.WorkerConfig,uptimeChecker *uptimeChecke
 	return &UptimeService{
 		checker:uptimeChecker,
 		awsService: awsService,
+		queueService: queueService,
 		config:config,
 		influx:influx,
 		influxBucket:config.InfluxDb2Bucket,
@@ -58,12 +66,22 @@ func (u *UptimeService) CheckSite(site *SiteBdd){
 			}
 		}
 
-		//TODO si site.Status n'est pas en erreur alors alerte a faire et enregistrement dans mongo
+		//TODO si site.Status n'est pas en erreur alors enregistrement dans mongo
 		log.Println(site.Url," DOWN ",result.HttpCode," ",result.Err ,"(",result.Duration,")")
+		u.queueService.AddAlertToAmqQueue(&UptimeAlerte{
+			IsCurrentlyDown:true,
+			Site:site,
+			ResultUptime:&result,
+		})
 		return
 	} else if result.Err  == "" && result.HttpCode == 200 {
-		//TODO si site.Status indique erreur alors que je n'ai plus d'erreur alors alerte à faire et enregistrement dans mongo
+		//TODO si site.Status indique erreur alors que je n'ai plus d'erreur alors enregistrement dans mongo
 		log.Println(site.Url," up (",result.Duration,")")
+		u.queueService.AddAlertToAmqQueue(&UptimeAlerte{
+			IsCurrentlyDown:false,
+			Site:site,
+			ResultUptime:&result,
+		})
 		u.logResponseType(site,result)
 		return
 	}

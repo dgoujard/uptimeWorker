@@ -31,6 +31,6 @@ func (c *cronService)cronAddSitesToQueue() {
 	liste := c.databaseService.GetSitesLis()
 	for _, site := range liste {
 		//TODO selon la config du site et le minute en cours ajouté dans les check ou pas
-		c.queueService.AddSiteToAmqQueue(site,false)
+		c.queueService.AddSiteToAmqQueue(site)
 	}
 }

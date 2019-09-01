@@ -11,6 +11,7 @@ type QueueService struct  {
 	amqCo *amqp.Connection
 	amqCh *amqp.Channel
 	amqQueueName string
+	amqAlertQueueName string
 }
 
 func CreateQueueService(config *config.AmqConfig) *QueueService {
@@ -27,13 +28,36 @@ func CreateQueueService(config *config.AmqConfig) *QueueService {
 		log.Println("Channel: %s", err)
 
 	}
-	return &QueueService{amqCo:connection,amqQueueName:config.QueueName,amqCh:channel}
+	return &QueueService{
+		amqCo:connection,
+		amqQueueName:config.QueueName,
+		amqAlertQueueName:config.QueueAlertName,
+		amqCh:channel,
+	}
 }
 
-func (q *QueueService)AddSiteToAmqQueue(site SiteBdd, isPriority bool) {
+func (q *QueueService)AddSiteToAmqQueue(site SiteBdd) {
 	jsonData, _ := json.Marshal(site)
 
 	err := q.amqCh.Publish("",q.amqQueueName,false,false,amqp.Publishing{
+		Headers:         amqp.Table{},
+		ContentType:     "application/json",
+		ContentEncoding: "",
+		Body:            jsonData,
+		DeliveryMode:    amqp.Persistent, // 1=non-persistent, 2=persistent
+		Priority:        0,              // 0-9
+		// a bunch of application/implementation-specific fields
+	})
+	if err != nil {
+		log.Println(err.Error())
+		return
+	}
+}
+
+func (q *QueueService)AddAlertToAmqQueue(alerte *UptimeAlerte) {
+	jsonData, _ := json.Marshal(alerte)
+
+	err := q.amqCh.Publish("",q.amqAlertQueueName,false,false,amqp.Publishing{
 		Headers:         amqp.Table{},
 		ContentType:     "application/json",
 		ContentEncoding: "",

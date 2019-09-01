@@ -9,6 +9,7 @@ type TomlConfig struct {
 type AmqConfig struct {
 	Uri string
 	QueueName string
+	QueueAlertName string
 	ConcurentRuntime int
 }
 type AwsConfig struct {

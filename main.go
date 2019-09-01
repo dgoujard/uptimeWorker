@@ -54,7 +54,7 @@ func main() {
 	queueService := services.CreateQueueService(&configFile.Amq)
 	awsService := services.CreateAwsService(&configFile.Aws)
 	uptimeCheckerService := services.CreateUptimeCheckerService()
-	uptimeService := services.CreateUptimeService(&configFile.Worker,uptimeCheckerService,awsService)
+	uptimeService := services.CreateUptimeService(&configFile.Worker,uptimeCheckerService,awsService,queueService)
 	queueWorker := services.CreateQueueWorker(&configFile.Amq,queueService,uptimeService)
 
 	if len(os.Args) > 1 && os.Args[1] == "withCron" {

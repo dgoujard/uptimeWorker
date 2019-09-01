@@ -6,6 +6,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/lambda"
+	"github.com/aws/aws-sdk-go/service/ses"
 	"github.com/dgoujard/uptimeWorker/config"
 	"log"
 	"strings"
@@ -48,4 +49,47 @@ func (a *AwsService)CallUptimeCheckLambdaFunc(arn string,site *SiteBdd) (error,*
 		return err, nil
 	}
 	return nil,&resultUptime
+}
+
+func (a *AwsService) SendEmail(from string, to string,subject string, Htmlmessage string, Txtmessage string) error {
+	// Create an SES session.
+	svc := ses.New(a.session)
+	// Assemble the email.
+	body := &ses.Body{}
+	if len(Htmlmessage) > 0 {
+		body.Html = &ses.Content{
+			Data:    aws.String(Htmlmessage),
+		}
+	}
+	if len(Txtmessage) > 0 {
+		body.Text = &ses.Content{
+			Data:    aws.String(Txtmessage),
+		}
+	}
+
+	input := &ses.SendEmailInput{
+		Destination: &ses.Destination{
+			ToAddresses: []*string{
+				aws.String(to),
+			},
+		},
+		Message: &ses.Message{
+			Body: body,
+			Subject: &ses.Content{
+				Data:    aws.String(subject),
+			},
+		},
+		Source: aws.String(from),
+		// Uncomment to use a configuration set
+		//ConfigurationSetName: aws.String(ConfigurationSet),
+	}
+
+	// Attempt to send the email.
+	_, err := svc.SendEmail(input)
+
+	// Display error messages if they occur.
+	if err != nil {
+		return err
+	}
+	return nil
 }
