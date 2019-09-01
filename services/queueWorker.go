@@ -13,12 +13,14 @@ import (
 type QueueWorker struct {
 	queueService *QueueService
 	amqCo *amqp.Connection
-	amqQueueName string
+	amqUptimeQueueName string
+	amqAlerteQueueName string
 	amqConcurentRuntime int
 	uptimeService *UptimeService
+	alerteService *AlerteService
 }
 
-func CreateQueueWorker(config *config.AmqConfig, queueService *QueueService, uptime *UptimeService) *QueueWorker {
+func CreateQueueWorker(config *config.AmqConfig, queueService *QueueService, uptime *UptimeService,alerte *AlerteService) *QueueWorker {
 	connection, err := amqp.Dial(config.Uri)
 	if err != nil {
 		log.Println("Dial: %s", err)
@@ -30,10 +32,12 @@ func CreateQueueWorker(config *config.AmqConfig, queueService *QueueService, upt
 
 	return &QueueWorker{
 		amqCo:connection,
-		amqQueueName:config.QueueName,
+		amqUptimeQueueName:config.QueueName,
+		amqAlerteQueueName:config.QueueAlertName,
 		amqConcurentRuntime:config.ConcurentRuntime,
 		queueService: queueService,
 		uptimeService: uptime,
+		alerteService:alerte,
 	}
 }
 
@@ -42,8 +46,30 @@ func (q *QueueWorker) StartAmqWatching() {
 	if err != nil {
 		log.Println("Channel: %s", err)
 	}
+	defer channel.Close()
+	defer q.amqCo.Close()
+
+	q.listenUptimeChannel(channel)
+	if q.alerteService != nil {
+		q.listenAlerteChannel(channel)
+	}
+
+	signalChan := make(chan os.Signal, 1)
+	cleanupDone := make(chan bool)
+	signal.Notify(signalChan, os.Interrupt)
+	go func() {
+		for range signalChan {
+			fmt.Printf("\nReceived an interrupt, unsubscribing and closing connection...\n\n")
+			// Do not unsubscribe a durable on exit, except if asked to.
+			cleanupDone <- true
+		}
+	}()
+	<-cleanupDone
+}
+
+func (q *QueueWorker) listenUptimeChannel(channel *amqp.Channel)  {
 	msgs, err := channel.Consume(
-		q.amqQueueName, // queue
+		q.amqUptimeQueueName, // queue
 		"",             // consumer
 		false,          // auto-ack
 		false,          // exclusive
@@ -54,8 +80,6 @@ func (q *QueueWorker) StartAmqWatching() {
 	if err != nil {
 		log.Println("fail consume: %s", err)
 	}
-	defer channel.Close()
-	defer q.amqCo.Close()
 	for i := 0; i < q.amqConcurentRuntime; i++ {
 		go func(runtimeIndex int) {
 			for d := range msgs {
@@ -72,16 +96,39 @@ func (q *QueueWorker) StartAmqWatching() {
 			}
 		}(i)
 	}
+}
 
-	signalChan := make(chan os.Signal, 1)
-	cleanupDone := make(chan bool)
-	signal.Notify(signalChan, os.Interrupt)
-	go func() {
-		for range signalChan {
-			fmt.Printf("\nReceived an interrupt, unsubscribing and closing connection...\n\n")
-			// Do not unsubscribe a durable on exit, except if asked to.
-			cleanupDone <- true
-		}
-	}()
-	<-cleanupDone
+
+func (q *QueueWorker) listenAlerteChannel(channel *amqp.Channel)  {
+	msgs, err := channel.Consume(
+		q.amqAlerteQueueName, // queue
+		"",             // consumer
+		false,          // auto-ack
+		false,          // exclusive
+		false,          // no-local
+		false,          // no-wait
+		nil,            // args
+	)
+	if err != nil {
+		log.Println("fail consume: %s", err)
+	}
+	for i := 0; i < q.amqConcurentRuntime; i++ {
+		go func(runtimeIndex int) {
+			for d := range msgs {
+				//log.Println("Runtime ID Alerte: " + strconv.Itoa(runtimeIndex))
+				//log.Println(string(d.Body))
+
+				alertMessage := &Alerte{}
+				if err := json.Unmarshal(d.Body, &alertMessage); err != nil {
+					log.Printf("alertMessage json not valid  %v.", err)
+				}
+				switch alertMessage.Type {
+				case "uptime":
+					q.alerteService.handleAlerteUptimeTask(alertMessage)
+				}
+
+				d.Ack(false)
+			}
+		}(i)
+	}
 }

@@ -14,7 +14,6 @@ import (
 )
 
 func main() {
-
 	dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
 	if err != nil {
 		log.Fatal(err)
@@ -55,22 +54,41 @@ func main() {
 	awsService := services.CreateAwsService(&configFile.Aws)
 	uptimeCheckerService := services.CreateUptimeCheckerService()
 	uptimeService := services.CreateUptimeService(&configFile.Worker,uptimeCheckerService,awsService,queueService)
-	queueWorker := services.CreateQueueWorker(&configFile.Amq,queueService,uptimeService)
 
-	if len(os.Args) > 1 && os.Args[1] == "withCron" {
+	cliOptions := getCliParams()
+	if _, ok := cliOptions["withCron"]; ok {
 		cronService := services.CreateCronService(databaseService,queueService)
 		cronService.StartCronProcess()
+		log.Println("Cron enabled")
 	}
-/*	test := services.SiteBdd{Url:"http://www.actigraphSS.com"}
-	//fmt.Println(awsService.CallUptimeCheckLambdaFunc("arn:aws:lambda:eu-west-1:312046026144:function:uptimeCheck",test))
-	test := services.SiteBdd{Url:"https://maelis.eu"}
-	uptimeService.CheckSite(&test)
-/*
-	for i := 0; i < 10; i++ {
-		go func() {
-			uptimeService.CheckSite(&test)
-		}()
+
+	var alerteService *services.AlerteService
+	if _, ok := cliOptions["withAlerte"]; ok {
+		alerteService = services.CreateAlerteService(&configFile.Alert,awsService)
+		log.Println("Alerte enabled")
 	}
-	time.Sleep(2*time.Second)*/
+	queueWorker := services.CreateQueueWorker(&configFile.Amq,queueService,uptimeService,alerteService)
+
+	/*	test := services.SiteBdd{Url:"http://www.actigraphSS.com"}
+		//fmt.Println(awsService.CallUptimeCheckLambdaFunc("arn:aws:lambda:eu-west-1:312046026144:function:uptimeCheck",test))
+		test := services.SiteBdd{Url:"https://maelis.eu"}
+		uptimeService.CheckSite(&test)
+	/*
+		for i := 0; i < 10; i++ {
+			go func() {
+				uptimeService.CheckSite(&test)
+			}()
+		}
+		time.Sleep(2*time.Second)*/
 	queueWorker.StartAmqWatching()
+}
+
+func getCliParams() (result map[string]bool) {
+	result = make(map[string]bool)
+	if len(os.Args) > 1 {
+		for _, item := range os.Args {
+			result[item] = true
+		}
+	}
+	return result
 }

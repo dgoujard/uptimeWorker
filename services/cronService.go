@@ -9,7 +9,7 @@ type cronService struct {
 	databaseService *DatabaseService
 }
 
-func CreateCronService(database *DatabaseService,queue *QueueService) *cronService {
+func CreateCronService(database *DatabaseService, queue *QueueService) *cronService {
 	return &cronService{
 		queueService:    queue,
 		databaseService: database,

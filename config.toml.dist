@@ -17,10 +17,13 @@ influxDb2Url = "XXX"
 [aws]
 accessKey = "XXXX"
 secretKey = "XXX"
-region = "eu-west-3"
+region = "eu-west-1"
 
 [amq]
 uri= "amqp://XXX:XXXXX@XXXX:5672/"
 queueName = "XXXXX"
 queueAlertName = "XX"
 concurentRuntime=10
+
+[alert]
+emailFrom = "XXX"

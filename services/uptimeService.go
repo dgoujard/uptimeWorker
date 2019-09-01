@@ -8,16 +8,6 @@ import (
 	"time"
 )
 
-type AlerteParamUptime struct {
-	ResultUptime *CheckSiteResponse
-	IsCurrentlyDown bool
-}
-
-type Alerte struct {
-	Site *SiteBdd
-	Type string
-	Param interface{}
-}
 
 type UptimeService struct {
 	checker *uptimeCheckerService
@@ -76,10 +66,9 @@ func (u *UptimeService) CheckSite(site *SiteBdd){
 		u.queueService.AddAlertToAmqQueue(&Alerte{
 			Site:site,
 			Type: "uptime",
-			Param: &AlerteParamUptime{
-				ResultUptime:    &result,
-				IsCurrentlyDown: true,
-			},
+		},&AlerteParamUptime{
+			ResultUptime:    &result,
+			IsCurrentlyDown: true,
 		})
 		return
 	} else if result.Err  == "" && result.HttpCode == 200 {
@@ -88,10 +77,9 @@ func (u *UptimeService) CheckSite(site *SiteBdd){
 		u.queueService.AddAlertToAmqQueue(&Alerte{
 			Site:site,
 			Type: "uptime",
-			Param: &AlerteParamUptime{
-				ResultUptime:    &result,
-				IsCurrentlyDown: false,
-			},
+		},&AlerteParamUptime{
+			ResultUptime:    &result,
+			IsCurrentlyDown: false,
 		})
 		u.logResponseType(site,result)
 		return

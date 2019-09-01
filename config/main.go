@@ -5,6 +5,10 @@ type TomlConfig struct {
 	Amq AmqConfig
 	Aws AwsConfig
 	Worker WorkerConfig
+	Alert AlertConfig
+}
+type AlertConfig struct {
+	EmailFrom string
 }
 type AmqConfig struct {
 	Uri string
