@@ -8,6 +8,11 @@ database = "XXX"
 [worker]
 enableLambdaRemoteCheck = false
 lambdaArn = "XXXX"
+enableInfluxDb2Reporting = false
+influxDb2Token =  "XXX"
+influxDb2Bucket = "XXX"
+influxDb2Org = "XX"
+influxDb2Url = "XXX"
 
 [aws]
 accessKey = "XXXX"

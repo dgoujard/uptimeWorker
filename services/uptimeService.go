@@ -1,25 +1,47 @@
 package services
 
 import (
+	"context"
 	"github.com/dgoujard/uptimeWorker/config"
+	"github.com/influxdata/influxdb-client-go"
 	"log"
+	"time"
 )
 
 type UptimeService struct {
 	checker *uptimeCheckerService
 	awsService *AwsService
 	config *config.WorkerConfig
+	influx *influxdb.Client
+	influxBucket string
+	influxOrg string
 }
 func CreateUptimeService(config *config.WorkerConfig,uptimeChecker *uptimeCheckerService, awsService *AwsService) *UptimeService {
+
+	var influx *influxdb.Client
+	var err error
+
+	if config.EnableInfluxDb2Reporting {
+		influx, err = influxdb.New(nil,
+			influxdb.WithAddress(config.InfluxDb2Url),
+			influxdb.WithToken(config.InfluxDb2Token),
+		)
+		if err != nil {
+			panic(err) // error handling here; normally we wouldn't use fmt but it works for the example
+		}
+	}
+
 	return &UptimeService{
 		checker:uptimeChecker,
 		awsService: awsService,
 		config:config,
+		influx:influx,
+		influxBucket:config.InfluxDb2Bucket,
+		influxOrg:config.InfluxDb2Org,
 	}
 }
 
 func (u *UptimeService) CheckSite(site *SiteBdd){
-	//TODO log des temps de réponse dans influxdb
 	result := u.checker.CheckSite(site)
 	if result.Err != "" || result.HttpCode != 200 {
 		if u.config.EnableLambdaRemoteCheck {
@@ -42,6 +64,24 @@ func (u *UptimeService) CheckSite(site *SiteBdd){
 	} else if result.Err  == "" && result.HttpCode == 200 {
 		//TODO si site.Status indique erreur alors que je n'ai plus d'erreur alors alerte à faire et enregistrement dans mongo
 		log.Println(site.Url," up (",result.Duration,")")
+		u.logResponseType(site,result)
 		return
+	}
+}
+
+func (u *UptimeService)logResponseType(site *SiteBdd, result CheckSiteResponse)  {
+	if u.influx != nil {
+		localFrance, _ := time.LoadLocation("Europe/Paris")
+
+		myMetrics := []influxdb.Metric{
+			influxdb.NewRowMetric(
+				map[string]interface{}{"total": result.Duration.Nanoseconds()/ 1e6},
+				"reponse_time",
+				map[string]string{"name": site.Name,"url":site.Url,"id":site.Id.Hex()},
+				time.Now().In(localFrance)),
+		}
+		if err := u.influx.Write(context.Background(), u.influxBucket, u.influxOrg, myMetrics...); err != nil {
+			log.Fatal(err) // as above use your own error handling here.
+		}
 	}
 }

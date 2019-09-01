@@ -19,6 +19,11 @@ type AwsConfig struct {
 type WorkerConfig struct {
 	EnableLambdaRemoteCheck bool
 	LambdaArn string
+	EnableInfluxDb2Reporting bool
+	InfluxDb2Token string
+	InfluxDb2Bucket string
+	InfluxDb2Org string
+	InfluxDb2Url string
 }
 type DatabaseConfig struct {
 	Server string
