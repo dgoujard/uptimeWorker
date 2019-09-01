@@ -17,6 +17,8 @@ func CreateCronService(database *DatabaseService,queue *QueueService) *cronServi
 }
 func (c *cronService)StartCronProcess() {
 	ticker := time.NewTicker(60 * time.Second)
+	//TODO faire cron qui toutes les heures pour regarder état de la date expiration SSL
+	//TODO si < 7 jours et que date dernier email alerte (todo ajout champ) > 7 jours date expiration alors alerte
 	go func() {
 		c.cronAddSitesToQueue()
 		for t := range ticker.C {

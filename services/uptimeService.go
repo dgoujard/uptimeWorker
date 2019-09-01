@@ -8,10 +8,15 @@ import (
 	"time"
 )
 
-type UptimeAlerte struct {
-	Site *SiteBdd
+type AlerteParamUptime struct {
 	ResultUptime *CheckSiteResponse
 	IsCurrentlyDown bool
+}
+
+type Alerte struct {
+	Site *SiteBdd
+	Type string
+	Param interface{}
 }
 
 type UptimeService struct {
@@ -68,19 +73,25 @@ func (u *UptimeService) CheckSite(site *SiteBdd){
 
 		//TODO si site.Status n'est pas en erreur alors enregistrement dans mongo
 		log.Println(site.Url," DOWN ",result.HttpCode," ",result.Err ,"(",result.Duration,")")
-		u.queueService.AddAlertToAmqQueue(&UptimeAlerte{
-			IsCurrentlyDown:true,
+		u.queueService.AddAlertToAmqQueue(&Alerte{
 			Site:site,
-			ResultUptime:&result,
+			Type: "uptime",
+			Param: &AlerteParamUptime{
+				ResultUptime:    &result,
+				IsCurrentlyDown: true,
+			},
 		})
 		return
 	} else if result.Err  == "" && result.HttpCode == 200 {
 		//TODO si site.Status indique erreur alors que je n'ai plus d'erreur alors enregistrement dans mongo
 		log.Println(site.Url," up (",result.Duration,")")
-		u.queueService.AddAlertToAmqQueue(&UptimeAlerte{
-			IsCurrentlyDown:false,
+		u.queueService.AddAlertToAmqQueue(&Alerte{
 			Site:site,
-			ResultUptime:&result,
+			Type: "uptime",
+			Param: &AlerteParamUptime{
+				ResultUptime:    &result,
+				IsCurrentlyDown: false,
+			},
 		})
 		u.logResponseType(site,result)
 		return

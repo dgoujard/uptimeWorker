@@ -54,7 +54,7 @@ func (q *QueueService)AddSiteToAmqQueue(site SiteBdd) {
 	}
 }
 
-func (q *QueueService)AddAlertToAmqQueue(alerte *UptimeAlerte) {
+func (q *QueueService)AddAlertToAmqQueue(alerte *Alerte) {
 	jsonData, _ := json.Marshal(alerte)
 
 	err := q.amqCh.Publish("",q.amqAlertQueueName,false,false,amqp.Publishing{
