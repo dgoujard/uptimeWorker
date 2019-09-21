@@ -14,3 +14,13 @@ type SiteBdd struct{
 	Status int
 	UptimeId int32 `json:"uptimeId,omitempty" bson:"uptimeId,omitempty"`
 }
+
+type LogBdd struct{
+	Id primitive.ObjectID  `json:"_id,omitempty" bson:"_id,omitempty"`
+	Datetime int64 `json:"datetime,omitempty" bson:"datetime,omitempty"`
+	Site primitive.ObjectID `json:"Site,omitempty" bson:"Site,omitempty"`
+	Type primitive.ObjectID `json:"Type,omitempty" bson:"Type,omitempty"`
+	Duration int `json:"duration,omitempty" bson:"duration,omitempty"`
+	Code int `json:"code,omitempty" bson:"code,omitempty"` //Ne marche pas
+	Detail string
+}

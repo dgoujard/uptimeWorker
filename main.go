@@ -31,7 +31,7 @@ func main() {
 		LocalTime:  true,
 		Compress:   true, // disabled by default
 	}
-	//log.SetOutput(l)
+	log.SetOutput(l)
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, syscall.SIGHUP)
 
@@ -53,7 +53,7 @@ func main() {
 	queueService := services.CreateQueueService(&configFile.Amq)
 	awsService := services.CreateAwsService(&configFile.Aws)
 	uptimeCheckerService := services.CreateUptimeCheckerService()
-	uptimeService := services.CreateUptimeService(&configFile.Worker,uptimeCheckerService,awsService,queueService)
+	uptimeService := services.CreateUptimeService(&configFile.Worker,uptimeCheckerService,awsService,queueService,databaseService)
 
 	cliOptions := getCliParams()
 	if _, ok := cliOptions["withCron"]; ok {

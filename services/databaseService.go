@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/dgoujard/uptimeWorker/config"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
@@ -51,4 +52,37 @@ func (d *DatabaseService) GetSitesLis() (sites []SiteBdd)  {
 		log.Fatal(err)
 	}
 	return sites
+}
+func (d *DatabaseService) UpdateSiteStatus(bdd *SiteBdd, newStatus int)  {
+	bdd.Status = newStatus
+	d.client.Database(d.databaseName).Collection("sites").FindOneAndUpdate(
+		context.Background(),
+		bson.M{"_id": bdd.Id},
+		bson.M{"$set": bson.D{
+			{"status", bdd.Status},
+		},
+		},
+	)
+}
+
+func (d *DatabaseService) AddLogForSite(site *SiteBdd, sitelog *LogBdd) (error) {
+	sitelog.Type = site.Account
+	sitelog.Site = site.Id
+	res, err := d.client.Database(d.databaseName).Collection("logs").InsertOne(
+		context.Background(),
+		bson.M{
+			"code": sitelog.Code,
+			"detail": sitelog.Detail,
+			"duration": sitelog.Duration,
+			"Type":sitelog.Type,
+			"Site":sitelog.Site,
+			"datetime":sitelog.Datetime,
+		},
+	)
+	if err != nil {
+		log.Fatal(err)
+		return err
+	}
+	sitelog.Id = res.InsertedID.(primitive.ObjectID)
+	return  nil
 }

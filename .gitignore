@@ -2,3 +2,4 @@
 config.toml
 app.log
 main
+.DS_Store
