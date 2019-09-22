@@ -127,7 +127,7 @@ func (q *QueueWorker) listenAlerteChannel(channel *amqp.Channel)  {
 					q.alerteService.handleAlerteUptimeTask(alertMessage)
 				}
 
-				//d.Ack(false)
+				d.Ack(false)
 			}
 		}(i)
 	}

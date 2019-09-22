@@ -27,3 +27,9 @@ concurentRuntime=10
 
 [alert]
 emailFrom = "XXX"
+realtimechannel="uptime_alerte"
+
+[realtime]
+type="centrifugo"
+apiurl=XXX
+apikey=XXX

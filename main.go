@@ -31,7 +31,7 @@ func main() {
 		LocalTime:  true,
 		Compress:   true, // disabled by default
 	}
-	log.SetOutput(l)
+	//log.SetOutput(l)
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, syscall.SIGHUP)
 
@@ -54,7 +54,7 @@ func main() {
 	awsService := services.CreateAwsService(&configFile.Aws)
 	uptimeCheckerService := services.CreateUptimeCheckerService()
 	uptimeService := services.CreateUptimeService(&configFile.Worker,uptimeCheckerService,awsService,queueService,databaseService)
-
+	realtimeService := services.CreateRealtimeClient(&configFile.Realtime)
 	cliOptions := getCliParams()
 	if _, ok := cliOptions["withCron"]; ok {
 		cronService := services.CreateCronService(databaseService,queueService)
@@ -64,7 +64,7 @@ func main() {
 
 	var alerteService *services.AlerteService
 	if _, ok := cliOptions["withAlerte"]; ok {
-		alerteService = services.CreateAlerteService(&configFile.Alert,awsService,databaseService)
+		alerteService = services.CreateAlerteService(&configFile.Alert,awsService,databaseService,realtimeService)
 		log.Println("Alerte enabled")
 	}
 	queueWorker := services.CreateQueueWorker(&configFile.Amq,queueService,uptimeService,alerteService)

@@ -6,6 +6,7 @@ import (
 	"github.com/dgoujard/uptimeWorker/config"
 	"html/template"
 	"log"
+	"strconv"
 	"time"
 )
 
@@ -29,13 +30,15 @@ type AlerteService struct {
 	AwsService          *AwsService
 	config              *config.AlertConfig
 	db		*DatabaseService
+	realtime *RealtimeService
 }
 
-func CreateAlerteService(config *config.AlertConfig, awsService *AwsService, databaseService *DatabaseService) *AlerteService {
+func CreateAlerteService(config *config.AlertConfig, awsService *AwsService, databaseService *DatabaseService, realtime *RealtimeService) *AlerteService {
 	return &AlerteService{
 		config:config,
 		AwsService:awsService,
 		db:databaseService,
+		realtime: realtime,
 	}
 }
 func generateEmailSubject(site *SiteBdd,log *LogBdd) (subject string) {
@@ -66,6 +69,25 @@ func (a *AlerteService)handleAlerteUptimeTask(alerteMessage *Alerte)  {
 			return
 		}
 		log.Println("Alerte a faire",alerteMessage.Site.Name," Down? ",param.IsCurrentlyDown," Detail ",param.LogSite.Detail," TS ",param.LogSite.Datetime)
+		if len(a.config.Realtimechannel)> 0 {
+			var messageToRT = make(map[string]string)
+			messageToRT["site_id"] = alerteMessage.Site.Id.Hex()
+			messageToRT["site_name"] = alerteMessage.Site.Name
+			messageToRT["site_url"] = alerteMessage.Site.Url
+			if param.IsCurrentlyDown {
+				messageToRT["isDown"] = "1"
+			}else{
+				messageToRT["isDown"] = "0"
+			}
+			messageToRT["detail"] = param.LogSite.Detail
+			messageToRT["code"] = strconv.Itoa(param.LogSite.Code)
+			messageToRT["datetime"] = strconv.Itoa(int(param.LogSite.Datetime))
+			err := a.realtime.Publish(a.config.Realtimechannel,messageToRT)
+			if err != nil {
+				log.Println("Probleme publication realtime",err)
+			}
+		}
+
 		if alerteMessage.Site.NotificationGroup.IsZero() {
 			log.Println("Pas de cibles pour les alertes")
 			return

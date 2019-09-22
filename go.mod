@@ -5,6 +5,7 @@ go 1.12
 require (
 	github.com/BurntSushi/toml v0.3.1
 	github.com/aws/aws-sdk-go v1.23.13
+	github.com/centrifugal/gocent v2.0.2+incompatible
 	github.com/go-stack/stack v1.8.0 // indirect
 	github.com/golang/snappy v0.0.1 // indirect
 	github.com/google/go-cmp v0.3.1 // indirect

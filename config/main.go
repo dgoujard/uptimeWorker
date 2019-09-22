@@ -6,10 +6,18 @@ type TomlConfig struct {
 	Aws AwsConfig
 	Worker WorkerConfig
 	Alert AlertConfig
+	Realtime RealtimeConfig
 }
 type AlertConfig struct {
 	EmailFrom string
+	Realtimechannel string
 }
+type RealtimeConfig struct {
+	Type string
+	Apiurl string
+	Apikey string
+}
+
 type AmqConfig struct {
 	Uri string
 	QueueName string
