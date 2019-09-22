@@ -64,7 +64,7 @@ func main() {
 
 	var alerteService *services.AlerteService
 	if _, ok := cliOptions["withAlerte"]; ok {
-		alerteService = services.CreateAlerteService(&configFile.Alert,awsService)
+		alerteService = services.CreateAlerteService(&configFile.Alert,awsService,databaseService)
 		log.Println("Alerte enabled")
 	}
 	queueWorker := services.CreateQueueWorker(&configFile.Amq,queueService,uptimeService,alerteService)

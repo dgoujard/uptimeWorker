@@ -88,6 +88,7 @@ func (u *UptimeService)logResponse(site *SiteBdd, result CheckSiteResponse)  {
 		u.databaseService.UpdateSiteStatus(site,9)
 		isDown=true
 	}else{
+		//TODO calcul de la duration car sera utile pour le mail de notification (possible d'afficher la durée)
 		u.databaseService.UpdateSiteStatus(site,2)
 		isDown = false
 	}

@@ -53,6 +53,19 @@ func (d *DatabaseService) GetSitesLis() (sites []SiteBdd)  {
 	}
 	return sites
 }
+
+func (d *DatabaseService) GetNotificationGroup(id string) *NotificationGroup {
+	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+	collection := d.client.Database(d.databaseName).Collection("notificationgroups")
+	var notificationGroup NotificationGroup
+	objId,_ := primitive.ObjectIDFromHex(id)
+	err := collection.FindOne(ctx, bson.D{{"_id", objId}}).Decode(&notificationGroup)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return &notificationGroup
+}
+
 func (d *DatabaseService) UpdateSiteStatus(bdd *SiteBdd, newStatus int)  {
 	bdd.Status = newStatus
 	d.client.Database(d.databaseName).Collection("sites").FindOneAndUpdate(
