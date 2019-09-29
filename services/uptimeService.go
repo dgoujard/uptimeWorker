@@ -85,11 +85,8 @@ func (u *UptimeService)logResponse(site *SiteBdd, result CheckSiteResponse)  {
 
 	//Mise à jour du site
 	if result.Err != "" || result.HttpCode != 200 {
-		u.databaseService.UpdateSiteStatus(site,9)
 		isDown=true
 	}else{
-		//TODO calcul de la duration car sera utile pour le mail de notification (possible d'afficher la durée)
-		u.databaseService.UpdateSiteStatus(site,2)
 		isDown = false
 	}
 
@@ -111,6 +108,13 @@ func (u *UptimeService)logResponse(site *SiteBdd, result CheckSiteResponse)  {
 	err := u.databaseService.AddLogForSite(site,&logSite)
 	if err != nil {
 		log.Println(err)
+	}
+
+	//Mise à jour site
+	if isDown {
+		u.databaseService.UpdateSiteStatus(site,9,logSite.Datetime)
+	}else{
+		u.databaseService.UpdateSiteStatus(site,2,logSite.Datetime)
 	}
 
 	//Creation de l'alerte

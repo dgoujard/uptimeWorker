@@ -66,13 +66,14 @@ func (d *DatabaseService) GetNotificationGroup(id string) *NotificationGroup {
 	return &notificationGroup
 }
 
-func (d *DatabaseService) UpdateSiteStatus(bdd *SiteBdd, newStatus int)  {
+func (d *DatabaseService) UpdateSiteStatus(bdd *SiteBdd, newStatus int,lastLogTimestamp int64)  {
 	bdd.Status = newStatus
 	d.client.Database(d.databaseName).Collection("sites").FindOneAndUpdate(
 		context.Background(),
 		bson.M{"_id": bdd.Id},
 		bson.M{"$set": bson.D{
 			{"status", bdd.Status},
+			{"lastlog", lastLogTimestamp},
 		},
 		},
 	)
