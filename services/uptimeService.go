@@ -49,13 +49,13 @@ func CreateUptimeService(config *config.WorkerConfig, uptimeChecker *uptimeCheck
 
 func (u *UptimeService) CheckSite(site *SiteBdd){
 	result := u.checker.CheckSite(site)
-	if result.Err != "" || result.HttpCode != 200 {
-		if u.config.EnableLambdaRemoteCheck && site.Status != 9 { //Si c'est pas déjà en panne
+	if result.Err != "" || result.HttpCode != 200 { //TODO mutialiser le test up/down
+		if u.config.EnableLambdaRemoteCheck && site.Status != SiteStatusDown { //Si c'est pas déjà en panne
 			err, resultLambda := u.awsService.CallUptimeCheckLambdaFunc(u.config.LambdaArn,site)
 			if err != nil {
 				log.Println("Requéte via Lambda en erreur. Probable probléme connexion woker")
 			}else {
-				if resultLambda.Err == "" && resultLambda.HttpCode == 200 {
+				if resultLambda.Err == "" && resultLambda.HttpCode == 200 { //TODO mutialiser le test up/down
 					log.Println(site.Url, " LAMBDA up (", resultLambda.Duration, ")")
 					u.logResponseTime(site,*resultLambda)
 					return
@@ -65,14 +65,14 @@ func (u *UptimeService) CheckSite(site *SiteBdd){
 			}
 		}
 
-		if site.Status == 2  {
+		if site.Status == SiteStatusUp  {
 			log.Println(site.Url," DOWN ",result.HttpCode," ",result.Err ,"(",result.Duration,")")
 			u.logResponse(site,result)
 		}
 		return
-	} else if result.Err  == "" && result.HttpCode == 200 {
+	} else if result.Err  == "" && result.HttpCode == 200 { //TODO mutialiser le test up/down
 		u.logResponseTime(site,result)
-		if site.Status == 9  {
+		if site.Status == SiteStatusDown  {
 			log.Println(site.Url," up (",result.Duration,")")
 			u.logResponse(site,result)
 		}
@@ -84,7 +84,7 @@ func (u *UptimeService)logResponse(site *SiteBdd, result CheckSiteResponse)  {
 	var isDown bool
 
 	//Mise à jour du site
-	if result.Err != "" || result.HttpCode != 200 {
+	if result.Err != "" || result.HttpCode != 200 { //TODO mutialiser le test up/down
 		isDown=true
 	}else{
 		isDown = false
@@ -105,16 +105,16 @@ func (u *UptimeService)logResponse(site *SiteBdd, result CheckSiteResponse)  {
 		Code:     logCode,
 		Detail:   logDetail,
 	}
-	err := u.databaseService.AddLogForSite(site,&logSite)
+	err := u.databaseService.AddLogForSite(site,&logSite,isDown)
 	if err != nil {
 		log.Println(err)
 	}
 
 	//Mise à jour site
 	if isDown {
-		u.databaseService.UpdateSiteStatus(site,9,logSite.Datetime)
+		u.databaseService.UpdateSiteStatus(site,SiteStatusDown,logSite.Datetime)
 	}else{
-		u.databaseService.UpdateSiteStatus(site,2,logSite.Datetime)
+		u.databaseService.UpdateSiteStatus(site,SiteStatusUp,logSite.Datetime)
 	}
 
 	//Creation de l'alerte

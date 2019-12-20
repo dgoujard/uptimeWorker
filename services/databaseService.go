@@ -16,8 +16,29 @@ import (
 type DatabaseService struct {
 	client *mongo.Client
 	databaseName string
+	logtypesMap map[int]primitive.ObjectID
 }
 
+func (d *DatabaseService) getLogtypesAvailable()  {
+	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+	collection := d.client.Database(d.databaseName).Collection("logtypes")
+	cur, err := collection.Find(ctx, bson.D{})
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer cur.Close(ctx)
+	for cur.Next(ctx) {
+		var result LogTypesBdd
+		err := cur.Decode(&result)
+		if err != nil {
+			log.Fatal(err)
+		}
+		d.logtypesMap[result.TypeId] = result.Id
+	}
+	if err := cur.Err(); err != nil {
+		log.Fatal(err)
+	}
+}
 func CreateDatabaseConnection(config *config.DatabaseConfig) *DatabaseService {
 	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI("mongodb://"+config.User+":"+config.Password+"@"+config.Server+":"+strconv.Itoa(config.Port)+"/"+config.Database))
@@ -29,6 +50,7 @@ func CreateDatabaseConnection(config *config.DatabaseConfig) *DatabaseService {
 	return &DatabaseService{
 		client:client,
 		databaseName: config.Database,
+		logtypesMap:make(map[int]primitive.ObjectID),
 	}
 }
 
@@ -46,7 +68,9 @@ func (d *DatabaseService) GetSitesLis() (sites []SiteBdd)  {
 		if err != nil {
 			log.Fatal(err)
 		}
-		sites = append(sites, result)
+		//if(result.Name == "Afficheurs CCI (S6)"){
+			sites = append(sites, result)
+		//}
 	}
 	if err := cur.Err(); err != nil {
 		log.Fatal(err)
@@ -79,9 +103,17 @@ func (d *DatabaseService) UpdateSiteStatus(bdd *SiteBdd, newStatus int,lastLogTi
 	)
 }
 
-func (d *DatabaseService) AddLogForSite(site *SiteBdd, sitelog *LogBdd) (error) {
-	sitelog.Type = site.Account
+func (d *DatabaseService) AddLogForSite(site *SiteBdd, sitelog *LogBdd, isDown bool) error {
+	if len(d.logtypesMap) == 0 { //Recuperation des types si je n'en ai pas déjà eu besoin avant
+		d.getLogtypesAvailable()
+	}
+	if isDown {
+		sitelog.Type = d.logtypesMap[SiteStatusDown]
+	}else{
+		sitelog.Type = d.logtypesMap[SiteStatusUp]
+	}
 	sitelog.Site = site.Id
+
 	res, err := d.client.Database(d.databaseName).Collection("logs").InsertOne(
 		context.Background(),
 		bson.M{

@@ -4,6 +4,9 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+const SiteStatusUp = 2;
+const SiteStatusDown = 9;
+
 type SiteBdd struct{
 	Id primitive.ObjectID  `json:"_id,omitempty" bson:"_id,omitempty"`
 	Account primitive.ObjectID `json:"Account,omitempty" bson:"Account,omitempty"`
@@ -24,6 +27,11 @@ type LogBdd struct{
 	Duration int `json:"duration,omitempty" bson:"duration,omitempty"`
 	Code int `json:"code,omitempty" bson:"code,omitempty"` //Ne marche pas
 	Detail string
+}
+type LogTypesBdd struct{
+	Id primitive.ObjectID  `json:"_id,omitempty" bson:"_id,omitempty"`
+	TypeId int `json:"logTypeId,omitempty" bson:"logTypeId,omitempty"`
+	Label string `json:"logTypeLabel,omitempty" bson:"logTypeLabel,omitempty"`
 }
 
 type NotificationGroup struct{
