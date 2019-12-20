@@ -54,10 +54,14 @@ func CreateDatabaseConnection(config *config.DatabaseConfig) *DatabaseService {
 	}
 }
 
-func (d *DatabaseService) GetSitesLis() (sites []SiteBdd)  {
+func (d *DatabaseService) GetSitesList(withPaused bool) (sites []SiteBdd)  {
 	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
 	collection := d.client.Database(d.databaseName).Collection("sites")
-	cur, err := collection.Find(ctx, bson.D{})
+	var filter = bson.M{}
+	if !withPaused {
+		filter = bson.M{"status": bson.M{"$ne": SiteStatusPause}}
+	}
+	cur, err := collection.Find(ctx, filter)
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -4,8 +4,9 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-const SiteStatusUp = 2;
-const SiteStatusDown = 9;
+const SiteStatusUp = 2
+const SiteStatusDown = 9
+const SiteStatusPause = 99
 
 type SiteBdd struct{
 	Id primitive.ObjectID  `json:"_id,omitempty" bson:"_id,omitempty"`
