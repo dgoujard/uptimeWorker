@@ -41,8 +41,8 @@ func CreateAlerteService(config *config.AlertConfig, awsService *AwsService, dat
 		realtime: realtime,
 	}
 }
-func generateEmailSubject(site *SiteBdd,log *LogBdd) (subject string) {
-	if(log.Code != 200 || log.Detail != ""){
+func generateEmailSubject(site *SiteBdd, isDown bool) (subject string) {
+	if isDown{
 		subject = "[Alerte Uptime DOWN] "+site.Name
 	}else{
 		subject = "[Alerte Uptime UP] "+site.Name
@@ -121,7 +121,7 @@ func (a *AlerteService)handleAlerteUptimeTask(alerteMessage *Alerte)  {
 					mailHtml := tpl.String()
 					err = a.AwsService.SendEmail(a.config.EmailFrom,
 						cible.Cible,
-						generateEmailSubject(alerteMessage.Site,param.LogSite),
+						generateEmailSubject(alerteMessage.Site,param.IsCurrentlyDown),
 						mailHtml,
 						"",
 					)

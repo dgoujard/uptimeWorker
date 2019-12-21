@@ -59,7 +59,7 @@ func (d *DatabaseService) GetSitesList(withPaused bool) (sites []SiteBdd)  {
 	collection := d.client.Database(d.databaseName).Collection("sites")
 	var filter = bson.M{}
 	if !withPaused {
-		filter = bson.M{"status": bson.M{"$ne": SiteStatusPause}}
+		filter = bson.M{"status": bson.M{"$ne": 0}} //0= paused 2 = up  9 = down
 	}
 	cur, err := collection.Find(ctx, filter)
 	if err != nil {
