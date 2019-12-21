@@ -61,7 +61,7 @@ func (d *DatabaseService) GetSitesList(withPaused bool) (sites []SiteBdd)  {
 	collection := d.client.Database(d.databaseName).Collection("sites")
 	var filter = bson.M{}
 	if !withPaused {
-		filter = bson.M{"status": bson.M{"$ne": 0}} //0= paused 2 = up  9 = down
+		filter = bson.M{"status": bson.M{"$ne": SiteStatusPause}}
 	}
 	cur, err := collection.Find(ctx, filter)
 	if err != nil {
@@ -116,9 +116,9 @@ func (d *DatabaseService) AddLogForSite(site *SiteBdd, sitelog *LogBdd, isDown b
 	}
 	d.logtypesMapMux.Unlock()
 	if isDown {
-		sitelog.Type = d.logtypesMap[SiteStatusDown]
+		sitelog.Type = d.logtypesMap[LogTypeStatusDown]
 	}else{
-		sitelog.Type = d.logtypesMap[SiteStatusUp]
+		sitelog.Type = d.logtypesMap[LogTypeStatusUp]
 	}
 	sitelog.Site = site.Id
 

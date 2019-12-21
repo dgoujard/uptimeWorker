@@ -6,7 +6,11 @@ import (
 
 const SiteStatusUp = 2
 const SiteStatusDown = 9
-const SiteStatusPause = 99
+const SiteStatusPause = 0
+
+const LogTypeStatusUp = 2
+const LogTypeStatusDown = 1
+const LogTypeStatusPause = 99
 
 type SiteBdd struct{
 	Id primitive.ObjectID  `json:"_id,omitempty" bson:"_id,omitempty"`
