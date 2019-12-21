@@ -10,6 +10,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 	"log"
 	"strconv"
+	"sync"
 	"time"
 )
 
@@ -17,6 +18,7 @@ type DatabaseService struct {
 	client *mongo.Client
 	databaseName string
 	logtypesMap map[int]primitive.ObjectID
+	logtypesMapMux sync.Mutex
 }
 
 func (d *DatabaseService) getLogtypesAvailable()  {
@@ -108,9 +110,11 @@ func (d *DatabaseService) UpdateSiteStatus(bdd *SiteBdd, newStatus int,lastLogTi
 }
 
 func (d *DatabaseService) AddLogForSite(site *SiteBdd, sitelog *LogBdd, isDown bool) error {
+	d.logtypesMapMux.Lock()
 	if len(d.logtypesMap) == 0 { //Recuperation des types si je n'en ai pas déjà eu besoin avant
 		d.getLogtypesAvailable()
 	}
+	d.logtypesMapMux.Unlock()
 	if isDown {
 		sitelog.Type = d.logtypesMap[SiteStatusDown]
 	}else{
