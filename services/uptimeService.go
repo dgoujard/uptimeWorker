@@ -25,7 +25,7 @@ func CreateUptimeService(config *config.WorkerConfig, uptimeChecker *uptimeCheck
 	var influx *influxdb.Client
 	var err error
 
-	if config.EnableInfluxDb2Reporting {
+	if config.EnableInfluxDb2Reporting && len(config.InfluxDb2Url) > 0 {
 		influx, err = influxdb.New(nil,
 			influxdb.WithAddress(config.InfluxDb2Url),
 			influxdb.WithToken(config.InfluxDb2Token),

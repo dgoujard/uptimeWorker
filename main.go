@@ -55,6 +55,20 @@ func main() {
 	uptimeCheckerService := services.CreateUptimeCheckerService()
 	uptimeService := services.CreateUptimeService(&configFile.Worker,uptimeCheckerService,awsService,queueService,databaseService)
 	realtimeService := services.CreateRealtimeClient(&configFile.Realtime)
+
+	//	test := services.SiteBdd{Url:"http://www.actigraphSS.com"}
+	//fmt.Println(awsService.CallUptimeCheckLambdaFunc("arn:aws:lambda:eu-west-1:312046026144:function:uptimeCheck",test))
+	/*test := services.SiteBdd{Url:"http://www.tgl-longwy.fr"}
+	fmt.Println(uptimeCheckerService.CheckSite(&test))
+	os.Exit(0)*/
+	/*
+		for i := 0; i < 10; i++ {
+			go func() {
+				uptimeService.CheckSite(&test)
+			}()
+		}
+		time.Sleep(2*time.Second)*/
+
 	cliOptions := getCliParams()
 	if _, ok := cliOptions["withCron"]; ok {
 		cronService := services.CreateCronService(databaseService,queueService)
@@ -68,19 +82,6 @@ func main() {
 		log.Println("Alerte enabled")
 	}
 	queueWorker := services.CreateQueueWorker(&configFile.Amq,queueService,uptimeService,alerteService)
-
-	//	test := services.SiteBdd{Url:"http://www.actigraphSS.com"}
-		//fmt.Println(awsService.CallUptimeCheckLambdaFunc("arn:aws:lambda:eu-west-1:312046026144:function:uptimeCheck",test))
-		/*test := services.SiteBdd{Url:"https://test.macuser.fr"}
-		fmt.Println(uptimeCheckerService.CheckSite(&test))
-		os.Exit(0)*/
-	/*
-		for i := 0; i < 10; i++ {
-			go func() {
-				uptimeService.CheckSite(&test)
-			}()
-		}
-		time.Sleep(2*time.Second)*/
 	queueWorker.StartAmqWatching()
 }
 
