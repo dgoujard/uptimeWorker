@@ -21,11 +21,10 @@ type UptimeService struct {
 	influxOrg string
 }
 func CreateUptimeService(config *config.WorkerConfig, uptimeChecker *uptimeCheckerService, awsService *AwsService, queueService *QueueService, databaseservice *DatabaseService) *UptimeService {
-
 	var influx *influxdb.Client
 	var err error
 
-	if config.EnableInfluxDb2Reporting && len(config.InfluxDb2Url) > 0 {
+	if config.EnableInfluxDb2Reporting && len(config.InfluxDb2Url) > 0 && len(config.InfluxDb2Token) > 0 {
 		influx, err = influxdb.New(nil,
 			influxdb.WithAddress(config.InfluxDb2Url),
 			influxdb.WithToken(config.InfluxDb2Token),
