@@ -21,6 +21,9 @@ type UptimeService struct {
 	influxOrg string
 }
 func CreateUptimeService(config *config.WorkerConfig, uptimeChecker *uptimeCheckerService, awsService *AwsService, queueService *QueueService, databaseservice *DatabaseService) *UptimeService {
+	if config == nil {
+		return &UptimeService{}
+	}
 	var influx *influxdb.Client
 	var err error
 
