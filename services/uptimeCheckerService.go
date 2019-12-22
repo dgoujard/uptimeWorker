@@ -7,6 +7,7 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"net"
 	"net/http"
 	"net/http/httptrace"
 	"net/url"
@@ -41,9 +42,11 @@ func (u *uptimeCheckerService)CheckSite(site *SiteBdd) CheckSiteResponse {
 	var redirectsFollowed = 0
 	//var timeout = 500 * time.Millisecond
 	var timeout = 10 * time.Second
+	resolver := &net.Resolver{} //Permet d'éviter le cache DNS
+	resolver.PreferGo = true
 	//log.Println(site.Url," Checking ")
 
-	err, httpCode, duration := visit(urlSite, reqHeaders,&redirectsFollowed,u.maxRedirects,timeout,"","")
+	err, httpCode, duration := visit(urlSite, reqHeaders,&redirectsFollowed,u.maxRedirects,timeout,"","",resolver)
 	var errorMessage = "" //par defaut pas d'erreur
 	if err != nil {
 		errorMessage = err.Error()
@@ -73,7 +76,7 @@ func parseURL(uri string) *url.URL {
 
 // visit visits a url and times the interaction.
 // If the response is a 30x, visit follows the redirect.
-func visit(url *url.URL, httpHeaders headers, redirectsFollowed *int, maxRedirects int, timeoutAccepted time.Duration,responseMustContain string, responseMustNotCountain string) (visitErr error, httpCode int, totalTime time.Duration) {
+func visit(url *url.URL, httpHeaders headers, redirectsFollowed *int, maxRedirects int, timeoutAccepted time.Duration,responseMustContain string, responseMustNotCountain string, resolver *net.Resolver) (visitErr error, httpCode int, totalTime time.Duration) {
 	req := newRequest(http.MethodGet, url, "",httpHeaders) //changer la méthode ?
 
 	var t0, t1, t2, t3, t4, t5, t6 time.Time
@@ -128,6 +131,24 @@ func visit(url *url.URL, httpHeaders headers, redirectsFollowed *int, maxRedirec
 		IdleConnTimeout:       90 * time.Second,
 		TLSHandshakeTimeout:   10 * time.Second,
 		ExpectContinueTimeout: 1 * time.Second,
+		DialContext: func(ctx context.Context, network string, addr string) (conn net.Conn, err error) {
+			host, port, err := net.SplitHostPort(addr)
+			if err != nil {
+				return nil, err
+			}
+			ips, err := resolver.LookupHost(ctx, host)
+			if err != nil {
+				return nil, err
+			}
+			for _, ip := range ips {
+				var dialer net.Dialer
+				conn, err = dialer.DialContext(ctx, network, net.JoinHostPort(ip, port))
+				if err == nil {
+					break
+				}
+			}
+			return
+		},
 	}
 
 
@@ -229,7 +250,7 @@ func visit(url *url.URL, httpHeaders headers, redirectsFollowed *int, maxRedirec
 			return errors.New("maximum number of redirects ("+strconv.Itoa(maxRedirects)+") followed"), httpCode, totalTime
 		}
 
-		return visit(loc,httpHeaders,redirectsFollowed, maxRedirects,timeoutAccepted,responseMustContain,responseMustNotCountain)
+		return visit(loc,httpHeaders,redirectsFollowed, maxRedirects,timeoutAccepted,responseMustContain,responseMustNotCountain,resolver)
 	}
 	visitErr = readResponseBody(req, resp,responseMustContain,responseMustNotCountain)
 	return visitErr, httpCode,totalTime

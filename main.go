@@ -31,7 +31,7 @@ func main() {
 		LocalTime:  true,
 		Compress:   true, // disabled by default
 	}
-	//log.SetOutput(l)
+	log.SetOutput(l)
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, syscall.SIGHUP)
 
@@ -69,10 +69,11 @@ func main() {
 	}
 	queueWorker := services.CreateQueueWorker(&configFile.Amq,queueService,uptimeService,alerteService)
 
-	/*	test := services.SiteBdd{Url:"http://www.actigraphSS.com"}
+	//	test := services.SiteBdd{Url:"http://www.actigraphSS.com"}
 		//fmt.Println(awsService.CallUptimeCheckLambdaFunc("arn:aws:lambda:eu-west-1:312046026144:function:uptimeCheck",test))
-		test := services.SiteBdd{Url:"https://maelis.eu"}
-		uptimeService.CheckSite(&test)
+		/*test := services.SiteBdd{Url:"https://test.macuser.fr"}
+		fmt.Println(uptimeCheckerService.CheckSite(&test))
+		os.Exit(0)*/
 	/*
 		for i := 0; i < 10; i++ {
 			go func() {
