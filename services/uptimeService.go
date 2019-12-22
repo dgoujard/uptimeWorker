@@ -21,16 +21,13 @@ type UptimeService struct {
 	influxOrg string
 }
 func CreateUptimeService(config *config.WorkerConfig, uptimeChecker *uptimeCheckerService, awsService *AwsService, queueService *QueueService, databaseservice *DatabaseService) *UptimeService {
-	if config == nil {
-		return &UptimeService{}
-	}
 	var influx *influxdb.Client
 	var err error
 
-	if config.EnableInfluxDb2Reporting && len(config.InfluxDb2Url) > 0 && len(config.InfluxDb2Token) > 0 {
-		influx, err = influxdb.New(nil,
-			influxdb.WithAddress(config.InfluxDb2Url),
-			influxdb.WithToken(config.InfluxDb2Token),
+	if config.EnableInfluxDb2Reporting && len(config.InfluxDb2Url) > 0 {
+		influx, err = influxdb.New(
+			config.InfluxDb2Url,
+			config.InfluxDb2Token,
 		)
 		if err != nil {
 			panic(err) // error handling here; normally we wouldn't use fmt but it works for the example
@@ -137,7 +134,7 @@ func (u *UptimeService)logResponseTime(site *SiteBdd, result CheckSiteResponse) 
 				map[string]string{"name": site.Name,"url":site.Url,"id":site.Id.Hex()},
 				time.Now()),
 		}
-		if err := u.influx.Write(context.Background(), u.influxBucket, u.influxOrg, myMetrics...); err != nil {
+		if _, err := u.influx.Write(context.Background(), u.influxBucket, u.influxOrg, myMetrics...); err != nil {
 			log.Fatal(err) // as above use your own error handling here.
 		}
 	}
