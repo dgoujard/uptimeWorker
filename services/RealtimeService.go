@@ -8,7 +8,7 @@ import (
 )
 
 type RealtimeService struct {
-	client *gocent.Client
+	Client *gocent.Client
 }
 
 func CreateRealtimeClient(config *config.RealtimeConfig) *RealtimeService {
@@ -16,12 +16,12 @@ func CreateRealtimeClient(config *config.RealtimeConfig) *RealtimeService {
 		Addr: config.Apiurl,
 		Key:  config.Apikey,
 	})
-	return &RealtimeService{client:client }
+	return &RealtimeService{Client:client }
 }
 
 func (r *RealtimeService) Publish(channel string, message map[string]string) error {
 	dataBytes, _ := json.Marshal(message)
-	err := r.client.Publish(context.Background(),channel,dataBytes)
+	err := r.Client.Publish(context.Background(),channel,dataBytes)
 	if err != nil {
 		return err
 	}

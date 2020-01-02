@@ -3,3 +3,4 @@ config.toml
 app.log
 main
 .DS_Store
+/uptime_worker

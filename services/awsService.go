@@ -13,7 +13,7 @@ import (
 )
 
 type AwsService struct {
-	session *session.Session
+	Session *session.Session
 }
 
 func CreateAwsService(config *config.AwsConfig) *AwsService {
@@ -24,12 +24,12 @@ func CreateAwsService(config *config.AwsConfig) *AwsService {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	return &AwsService{session:sess}
+	return &AwsService{Session:sess}
 }
 
 func (a *AwsService)CallUptimeCheckLambdaFunc(arn string,site *SiteBdd) (error,*CheckSiteResponse) {
 	tmpListArmParams := strings.Split(arn,":")
-	client := lambda.New(a.session, &aws.Config{Region: aws.String(tmpListArmParams[3])})
+	client := lambda.New(a.Session, &aws.Config{Region: aws.String(tmpListArmParams[3])})
 
 	payload, err := json.Marshal(site)
 	if err != nil {
@@ -53,7 +53,7 @@ func (a *AwsService)CallUptimeCheckLambdaFunc(arn string,site *SiteBdd) (error,*
 
 func (a *AwsService) SendEmail(from string, to string,subject string, Htmlmessage string, Txtmessage string) error {
 	// Create an SES session.
-	svc := ses.New(a.session)
+	svc := ses.New(a.Session)
 	// Assemble the email.
 	body := &ses.Body{}
 	if len(Htmlmessage) > 0 {

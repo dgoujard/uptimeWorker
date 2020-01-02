@@ -15,15 +15,15 @@ import (
 )
 
 type DatabaseService struct {
-	client *mongo.Client
-	databaseName string
-	logtypesMap map[int]primitive.ObjectID
-	logtypesMapMux sync.Mutex
+	Client *mongo.Client
+	DatabaseName string
+	LogtypesMap map[int]primitive.ObjectID
+	LogtypesMapMux sync.Mutex
 }
 
 func (d *DatabaseService) getLogtypesAvailable()  {
 	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
-	collection := d.client.Database(d.databaseName).Collection("logtypes")
+	collection := d.Client.Database(d.DatabaseName).Collection("logtypes")
 	cur, err := collection.Find(ctx, bson.D{})
 	if err != nil {
 		log.Fatal(err)
@@ -35,7 +35,7 @@ func (d *DatabaseService) getLogtypesAvailable()  {
 		if err != nil {
 			log.Fatal(err)
 		}
-		d.logtypesMap[result.TypeId] = result.Id
+		d.LogtypesMap[result.TypeId] = result.Id
 	}
 	if err := cur.Err(); err != nil {
 		log.Fatal(err)
@@ -50,15 +50,15 @@ func CreateDatabaseConnection(config *config.DatabaseConfig) *DatabaseService {
 		log.Fatal(err)
 	}
 	return &DatabaseService{
-		client:client,
-		databaseName: config.Database,
-		logtypesMap:make(map[int]primitive.ObjectID),
+		Client:client,
+		DatabaseName: config.Database,
+		LogtypesMap:make(map[int]primitive.ObjectID),
 	}
 }
 
 func (d *DatabaseService) GetSitesList(withPaused bool) (sites []SiteBdd)  {
 	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
-	collection := d.client.Database(d.databaseName).Collection("sites")
+	collection := d.Client.Database(d.DatabaseName).Collection("sites")
 	var filter = bson.M{}
 	if !withPaused {
 		filter = bson.M{"status": bson.M{"$ne": SiteStatusPause}}
@@ -86,7 +86,7 @@ func (d *DatabaseService) GetSitesList(withPaused bool) (sites []SiteBdd)  {
 
 func (d *DatabaseService) GetNotificationGroup(id string) *NotificationGroup {
 	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
-	collection := d.client.Database(d.databaseName).Collection("notificationgroups")
+	collection := d.Client.Database(d.DatabaseName).Collection("notificationgroups")
 	var notificationGroup NotificationGroup
 	objId,_ := primitive.ObjectIDFromHex(id)
 	err := collection.FindOne(ctx, bson.D{{"_id", objId}}).Decode(&notificationGroup)
@@ -98,7 +98,7 @@ func (d *DatabaseService) GetNotificationGroup(id string) *NotificationGroup {
 
 func (d *DatabaseService) UpdateSiteStatus(bdd *SiteBdd, newStatus int,lastLogTimestamp int64)  {
 	bdd.Status = newStatus
-	d.client.Database(d.databaseName).Collection("sites").FindOneAndUpdate(
+	d.Client.Database(d.DatabaseName).Collection("sites").FindOneAndUpdate(
 		context.Background(),
 		bson.M{"_id": bdd.Id},
 		bson.M{"$set": bson.D{
@@ -110,19 +110,19 @@ func (d *DatabaseService) UpdateSiteStatus(bdd *SiteBdd, newStatus int,lastLogTi
 }
 
 func (d *DatabaseService) AddLogForSite(site *SiteBdd, sitelog *LogBdd, isDown bool) error {
-	d.logtypesMapMux.Lock()
-	if len(d.logtypesMap) == 0 { //Recuperation des types si je n'en ai pas déjà eu besoin avant
+	d.LogtypesMapMux.Lock()
+	if len(d.LogtypesMap) == 0 { //Recuperation des types si je n'en ai pas déjà eu besoin avant
 		d.getLogtypesAvailable()
 	}
-	d.logtypesMapMux.Unlock()
+	d.LogtypesMapMux.Unlock()
 	if isDown {
-		sitelog.Type = d.logtypesMap[LogTypeStatusDown]
+		sitelog.Type = d.LogtypesMap[LogTypeStatusDown]
 	}else{
-		sitelog.Type = d.logtypesMap[LogTypeStatusUp]
+		sitelog.Type = d.LogtypesMap[LogTypeStatusUp]
 	}
 	sitelog.Site = site.Id
 
-	res, err := d.client.Database(d.databaseName).Collection("logs").InsertOne(
+	res, err := d.Client.Database(d.DatabaseName).Collection("logs").InsertOne(
 		context.Background(),
 		bson.M{
 			"code": sitelog.Code,

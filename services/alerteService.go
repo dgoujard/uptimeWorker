@@ -28,17 +28,17 @@ type alerteEmailVariablesTmpl struct {
 
 type AlerteService struct {
 	AwsService          *AwsService
-	config              *config.AlertConfig
-	db		*DatabaseService
-	realtime *RealtimeService
+	Config              *config.AlertConfig
+	Db		*DatabaseService
+	Realtime *RealtimeService
 }
 
 func CreateAlerteService(config *config.AlertConfig, awsService *AwsService, databaseService *DatabaseService, realtime *RealtimeService) *AlerteService {
 	return &AlerteService{
-		config:config,
+		Config:config,
 		AwsService:awsService,
-		db:databaseService,
-		realtime: realtime,
+		Db:databaseService,
+		Realtime: realtime,
 	}
 }
 func generateEmailSubject(site *SiteBdd, isDown bool) (subject string) {
@@ -69,7 +69,7 @@ func (a *AlerteService)handleAlerteUptimeTask(alerteMessage *Alerte)  {
 			return
 		}
 		log.Println("Alerte a faire",alerteMessage.Site.Name," Down? ",param.IsCurrentlyDown," Detail ",param.LogSite.Detail," TS ",param.LogSite.Datetime)
-		if len(a.config.Realtimechannel)> 0 {
+		if len(a.Config.Realtimechannel)> 0 {
 			var messageToRT = make(map[string]string)
 			messageToRT["site_id"] = alerteMessage.Site.Id.Hex()
 			messageToRT["site_name"] = alerteMessage.Site.Name
@@ -82,7 +82,7 @@ func (a *AlerteService)handleAlerteUptimeTask(alerteMessage *Alerte)  {
 			messageToRT["detail"] = param.LogSite.Detail
 			messageToRT["code"] = strconv.Itoa(param.LogSite.Code)
 			messageToRT["datetime"] = strconv.Itoa(int(param.LogSite.Datetime))
-			err := a.realtime.Publish(a.config.Realtimechannel,messageToRT)
+			err := a.Realtime.Publish(a.Config.Realtimechannel,messageToRT)
 			if err != nil {
 				log.Println("Probleme publication realtime",err)
 			}
@@ -108,7 +108,7 @@ func (a *AlerteService)handleAlerteUptimeTask(alerteMessage *Alerte)  {
 			Site:alerteMessage.Site,
 			Param:&param,
 		}
-		notificationgroup := a.db.GetNotificationGroup(alerteMessage.Site.NotificationGroup.Hex())
+		notificationgroup := a.Db.GetNotificationGroup(alerteMessage.Site.NotificationGroup.Hex())
 		for _, cible := range notificationgroup.Cibles {
 			switch cible.Type {
 				case "email":
@@ -119,7 +119,7 @@ func (a *AlerteService)handleAlerteUptimeTask(alerteMessage *Alerte)  {
 						log.Println("Template execution: ", err)
 					}
 					mailHtml := tpl.String()
-					err = a.AwsService.SendEmail(a.config.EmailFrom,
+					err = a.AwsService.SendEmail(a.Config.EmailFrom,
 						cible.Cible,
 						generateEmailSubject(alerteMessage.Site,param.IsCurrentlyDown),
 						mailHtml,
