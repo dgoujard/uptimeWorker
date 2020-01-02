@@ -55,7 +55,6 @@ func main() {
 	uptimeCheckerService := services.CreateUptimeCheckerService()
 	uptimeService := services.CreateUptimeService(&configFile.Worker,uptimeCheckerService,awsService,queueService,databaseService)
 	realtimeService := services.CreateRealtimeClient(&configFile.Realtime)
-
 	//	test := services.SiteBdd{Url:"http://www.actigraphSS.com"}
 	//fmt.Println(awsService.CallUptimeCheckLambdaFunc("arn:aws:lambda:eu-west-1:312046026144:function:uptimeCheck",test))
 	/*test := services.SiteBdd{Url:"http://www.tgl-longwy.fr"}
