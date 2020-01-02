@@ -125,6 +125,8 @@ func (q *QueueWorker) listenAlerteChannel(channel *amqp.Channel)  {
 				switch alertMessage.Type {
 				case "uptime":
 					q.alerteService.handleAlerteUptimeTask(alertMessage)
+				case "sslExpire":
+					q.alerteService.handleAlerteSSLExpireTask(alertMessage)
 				}
 
 				d.Ack(false)

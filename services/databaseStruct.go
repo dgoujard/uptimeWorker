@@ -22,6 +22,13 @@ type SiteBdd struct{
 	Url string
 	Status int
 	UptimeId int32 `json:"uptimeId,omitempty" bson:"uptimeId,omitempty"`
+	SslMonitored bool `json:"ssl_monitored,omitempty" bson:"ssl_monitored,omitempty"`
+	SslAlertExpireSended bool `json:"ssl_alertExpireSended,omitempty" bson:"ssl_alertExpireSended,omitempty"`
+	SslError string `json:"ssl_error,omitempty" bson:"ssl_error,omitempty"`
+	SslSubject string `json:"ssl_subject,omitempty" bson:"ssl_subject,omitempty"`
+	SslIssuer string `json:"ssl_issuer,omitempty" bson:"ssl_issuer,omitempty"`
+	SslAlgo string `json:"ssl_algo,omitempty" bson:"ssl_algo,omitempty"`
+	SslExpireDatetime int32 `json:"ssl_expireDatetime,omitempty" bson:"ssl_expireDatetime,omitempty"`
 }
 
 type LogBdd struct{

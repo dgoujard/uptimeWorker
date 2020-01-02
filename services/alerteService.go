@@ -61,6 +61,9 @@ func generateEmailTemplate() (html string) {
 /* Exemple d'une alerte
 {"Site":{"_id":"5d39cf70a7f30900062f589f","Account":"5d15e76baf18e1087b9cc379","NotificationGroup":"5d87308befeb2c009b5aada7","createDatetime":1562681347,"Name":"Outil Navitia Kisio","Url":"https://api.navitia.io/v1/coverage/fr-cen/networks/network:Semtao/traffic_reports?start_page=0","Status":9,"uptimeId":783062088},"Type":"uptime","param":{"IsCurrentlyDown":true,"LogSite":{"_id":"5d876ce3303899a57f5cea93","datetime":1569156323,"Site":"5d39cf70a7f30900062f589f","Type":"5d15e76baf18e1087b9cc379","code":401,"Detail":"Unauthorized"}}}
  */
+func (a *AlerteService) handleAlerteSSLExpireTask(alerteMessage *Alerte) {
+	//TODO
+}
 func (a *AlerteService)handleAlerteUptimeTask(alerteMessage *Alerte)  {
 	if alerteMessage.Param != nil {
 		param := AlerteParamUptime{}
