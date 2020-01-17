@@ -64,14 +64,14 @@ func (u *UptimeService) CheckSite(site *SiteBdd){
 			}
 		}
 
-		if site.Status == SiteStatusUp  {
+		if site.Status != SiteStatusDown  { //Si pas déjà en état down je log
 			log.Println(site.Url," DOWN ",result.HttpCode," ",result.Err ,"(",result.Duration,")")
 			u.logResponse(site,result)
 		}
 		return
 	} else if result.Err  == "" && result.HttpCode == 200 { //TODO mutialiser le test up/down
 		u.logResponseTime(site,result)
-		if site.Status == SiteStatusDown  {
+		if site.Status != SiteStatusUp  { //Si le site n'étair pas marqué up alors je le marque up
 			log.Println(site.Url," up (",result.Duration,")")
 			u.logResponse(site,result)
 		}
@@ -115,7 +115,6 @@ func (u *UptimeService)logResponse(site *SiteBdd, result CheckSiteResponse)  {
 	}else{
 		u.databaseService.UpdateSiteStatus(site,SiteStatusUp,logSite.Datetime)
 	}
-
 	//Creation de l'alerte
 	u.queueService.AddAlertToAmqQueue(&Alerte{
 		Site:site,
