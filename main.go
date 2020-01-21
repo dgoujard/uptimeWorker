@@ -31,7 +31,7 @@ func main() {
 		LocalTime:  true,
 		Compress:   true, // disabled by default
 	}
-	log.SetOutput(l)
+	//log.SetOutput(l)
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, syscall.SIGHUP)
 
