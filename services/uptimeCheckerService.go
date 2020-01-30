@@ -41,7 +41,7 @@ func (u *uptimeCheckerService)CheckSite(site *SiteBdd) CheckSiteResponse {
 	//reqHeaders = append(reqHeaders, "headername:value")
 	var redirectsFollowed = 0
 	//var timeout = 500 * time.Millisecond
-	var timeout = 10 * time.Second
+	var timeout = 15 * time.Second
 	resolver := &net.Resolver{} //Permet d'éviter le cache DNS
 	resolver.PreferGo = true
 	//log.Println(site.Url," Checking ")
