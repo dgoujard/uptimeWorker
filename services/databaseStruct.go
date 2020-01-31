@@ -39,6 +39,8 @@ type LogBdd struct{
 	Duration int `json:"duration,omitempty" bson:"duration,omitempty"`
 	Code int `json:"code,omitempty" bson:"code,omitempty"` //Ne marche pas
 	Detail string
+	TakeIntoAccount  bool `json:"takeIntoAccount,omitempty" bson:"takeIntoAccount,omitempty"`
+	Comment string `json:"comment,omitempty" bson:"comment,omitempty"`
 }
 type LogTypesBdd struct{
 	Id primitive.ObjectID  `json:"_id,omitempty" bson:"_id,omitempty"`

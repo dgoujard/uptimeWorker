@@ -103,6 +103,7 @@ func (u *UptimeService)logResponse(site *SiteBdd, result CheckSiteResponse)  {
 		Datetime: time.Now().In(loc).Unix(),
 		Code:     logCode,
 		Detail:   logDetail,
+		TakeIntoAccount: true,
 	}
 	err := u.databaseService.AddLogForSite(site,&logSite,isDown)
 	if err != nil {

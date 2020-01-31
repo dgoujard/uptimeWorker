@@ -131,6 +131,7 @@ func (d *DatabaseService) AddLogForSite(site *SiteBdd, sitelog *LogBdd, isDown b
 			"Type":sitelog.Type,
 			"Site":sitelog.Site,
 			"datetime":sitelog.Datetime,
+			"takeIntoAccount": sitelog.TakeIntoAccount,
 		},
 	)
 	if err != nil {
