@@ -84,6 +84,33 @@ func (d *DatabaseService) GetSitesList(withPaused bool) (sites []SiteBdd)  {
 	return sites
 }
 
+func (d *DatabaseService) GetLastSiteLog(id primitive.ObjectID, lastDownLog bool) (logSite *LogBdd) {
+	d.LogtypesMapMux.Lock()
+	if len(d.LogtypesMap) == 0 { //Recuperation des types si je n'en ai pas déjà eu besoin avant
+		d.getLogtypesAvailable()
+	}
+	d.LogtypesMapMux.Unlock()
+
+	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+	collection := d.Client.Database(d.DatabaseName).Collection("logs")
+
+	var logType primitive.ObjectID
+	if lastDownLog {
+		logType = d.LogtypesMap[LogTypeStatusDown]
+	}else{
+		logType = d.LogtypesMap[LogTypeStatusUp]
+	}
+	err := collection.FindOne(ctx,
+		bson.M{
+		"Site": id,
+		"Type":logType,
+		}, &options.FindOneOptions{Sort:bson.D{{"datetime",-1}}}).Decode(&logSite)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return logSite
+}
+
 func (d *DatabaseService) GetNotificationGroup(id string) *NotificationGroup {
 	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
 	collection := d.Client.Database(d.DatabaseName).Collection("notificationgroups")

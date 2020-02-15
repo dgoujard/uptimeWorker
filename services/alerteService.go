@@ -24,6 +24,7 @@ type Alerte struct {
 type alerteEmailVariablesTmpl struct {
 	Site *SiteBdd
 	Param *AlerteParamUptime
+	Messageduree string
 }
 
 type AlerteService struct {
@@ -55,6 +56,7 @@ func generateUptimeEmailTemplate() (html string) {
 	html += "<li>Url : <a href='{{.Site.Url}}' target='_blank'>{{.Site.Url}}</a></li>"
 	html += "<li>Code : {{.Param.LogSite.Code}} {{.Param.LogSite.Detail}}</li>"
 	html += "<li>Event timestamp : {{readableDatetime .Param.LogSite.Datetime}}</li>"
+	html += "{{ if not .Param.IsCurrentlyDown }}<li>Duration : {{.Messageduree}}</li>{{end}}"
 	html += "</ul>"
 	return
 }
@@ -136,6 +138,7 @@ func (a *AlerteService)handleAlerteUptimeTask(alerteMessage *Alerte)  {
 			return
 		}
 		log.Println("Alerte a faire",alerteMessage.Site.Name," Down? ",param.IsCurrentlyDown," Detail ",param.LogSite.Detail," TS ",param.LogSite.Datetime)
+		//Notification serveur temps réel pour interface web
 		if len(a.Config.Realtimechannel)> 0 {
 			var messageToRT = make(map[string]string)
 			messageToRT["site_id"] = alerteMessage.Site.Id.Hex()
@@ -156,11 +159,42 @@ func (a *AlerteService)handleAlerteUptimeTask(alerteMessage *Alerte)  {
 			}
 		}
 
+		//Notification si besoin à un groupe
 		if alerteMessage.Site.NotificationGroup.IsZero() {
 			log.Println("Pas de cibles pour les alertes")
 			return
 		}
 
+		//Calcul du texte de durée de panne si message up
+		var messageduree = ""
+		if !param.IsCurrentlyDown {
+			currentLogTime := time.Unix(param.LogSite.Datetime, 0)
+			//Recherche de la derniére panne dans les logs du site
+			lastLog := a.Db.GetLastSiteLog(alerteMessage.Site.Id,true)
+			if lastLog != nil && lastLog.Datetime != 0 {
+				previousLogTime := time.Unix(lastLog.Datetime, 0)
+				year, month, day, hour, min, sec := timeDiff(previousLogTime,currentLogTime)
+				if year > 0 {
+					messageduree += " "+strconv.Itoa(year)+" ans"
+				}
+				if month > 0 {
+					messageduree += " "+strconv.Itoa(month)+" mois"
+				}
+				if day > 0 {
+					messageduree += " "+strconv.Itoa(day)+" jours"
+				}
+				if hour > 0 {
+					messageduree += " "+strconv.Itoa(hour)+" heures"
+				}
+				if min > 0 {
+					messageduree += " "+strconv.Itoa(min)+" minutes et"
+				}
+				if sec > 0 {
+					messageduree += " "+strconv.Itoa(sec)+" secondes"
+				}
+			}
+		}
+		//Preparation de l'email pour les cibles email
 		tEmail, err := template.New("").Funcs(template.FuncMap{
 			"readableDatetime": func(timestamp int64) string {
 				loc, _ := time.LoadLocation("Europe/Paris")
@@ -175,6 +209,7 @@ func (a *AlerteService)handleAlerteUptimeTask(alerteMessage *Alerte)  {
 		tEmailVariable := alerteEmailVariablesTmpl{
 			Site:alerteMessage.Site,
 			Param:&param,
+			Messageduree: messageduree,
 		}
 		notificationgroup := a.Db.GetNotificationGroup(alerteMessage.Site.NotificationGroup.Hex())
 		for _, cible := range notificationgroup.Cibles {
@@ -199,4 +234,51 @@ func (a *AlerteService)handleAlerteUptimeTask(alerteMessage *Alerte)  {
 			}
 		}
 	}
+}
+
+func timeDiff(a, b time.Time) (year, month, day, hour, min, sec int) {
+	if a.Location() != b.Location() {
+		b = b.In(a.Location())
+	}
+	if a.After(b) {
+		a, b = b, a
+	}
+	y1, M1, d1 := a.Date()
+	y2, M2, d2 := b.Date()
+
+	h1, m1, s1 := a.Clock()
+	h2, m2, s2 := b.Clock()
+
+	year = int(y2 - y1)
+	month = int(M2 - M1)
+	day = int(d2 - d1)
+	hour = int(h2 - h1)
+	min = int(m2 - m1)
+	sec = int(s2 - s1)
+
+	// Normalize negative values
+	if sec < 0 {
+		sec += 60
+		min--
+	}
+	if min < 0 {
+		min += 60
+		hour--
+	}
+	if hour < 0 {
+		hour += 24
+		day--
+	}
+	if day < 0 {
+		// days in month:
+		t := time.Date(y1, M1, 32, 0, 0, 0, 0, time.UTC)
+		day += 32 - t.Day()
+		month--
+	}
+	if month < 0 {
+		month += 12
+		year--
+	}
+
+	return
 }
