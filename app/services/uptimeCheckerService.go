@@ -15,6 +15,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"github.com/dgoujard/uptimeWorker/util/jsonutil"
 )
 
 type uptimeCheckerService struct {
@@ -24,7 +25,7 @@ type uptimeCheckerService struct {
 type CheckSiteResponse struct {
 	Err string
 	HttpCode int
-	Duration Duration
+	Duration jsonutil.Duration
 }
 
 func CreateUptimeCheckerService() *uptimeCheckerService {
@@ -51,7 +52,7 @@ func (u *uptimeCheckerService)CheckSite(site *SiteBdd) CheckSiteResponse {
 	if err != nil {
 		errorMessage = err.Error()
 	}
-	return CheckSiteResponse{Err:errorMessage,HttpCode:httpCode,Duration:FromDuration(duration)}
+	return CheckSiteResponse{Err:errorMessage,HttpCode:httpCode,Duration:jsonutil.FromDuration(duration)}
 }
 
 func parseURL(uri string) *url.URL {

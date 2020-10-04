@@ -2,8 +2,8 @@ package main
 
 import (
 	"github.com/BurntSushi/toml"
+	"github.com/dgoujard/uptimeWorker/app/services"
 	"github.com/dgoujard/uptimeWorker/config"
-	"github.com/dgoujard/uptimeWorker/services"
 	"gopkg.in/natefinch/lumberjack.v2"
 	"log"
 	"os"
@@ -83,6 +83,7 @@ func main() {
 	queueWorker := services.CreateQueueWorker(&configFile.Amq,queueService,uptimeService,alerteService)
 	queueWorker.StartAmqWatching()
 }
+
 
 func getCliParams() (result map[string]bool) {
 	result = make(map[string]bool)
