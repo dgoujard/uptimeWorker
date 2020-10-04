@@ -5,3 +5,4 @@ main
 .DS_Store
 /uptime_worker
 uptimeworker
+!cmd/uptimeworker
