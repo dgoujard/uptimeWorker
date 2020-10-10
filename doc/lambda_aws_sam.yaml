@@ -1,0 +1,14 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+Description: An AWS Serverless Specification template describing your function.
+Resources:
+  uptimetest:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Handler: uptimeWorkerLambda
+      Runtime: go1.x
+      CodeUri: .
+      Description: ''
+      MemorySize: 512
+      Timeout: 15
+      Role: 'arn:aws:iam::312046026144:role/service-role/uptimetest-role-0zumaz57'
