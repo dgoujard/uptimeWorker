@@ -6,3 +6,4 @@ main
 /uptime_worker
 uptimeworker
 !cmd/uptimeworker
+/function.zip
