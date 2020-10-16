@@ -6,8 +6,6 @@ import (
 	"github.com/dgoujard/uptimeWorker/config"
 	"github.com/streadway/amqp"
 	"log"
-	"os"
-	"os/signal"
 )
 
 type QueueWorker struct {
@@ -53,19 +51,12 @@ func (q *QueueWorker) StartAmqWatching() {
 	if q.alerteService != nil {
 		q.listenAlerteChannel(channel)
 	}
-
-	signalChan := make(chan os.Signal, 1)
-	cleanupDone := make(chan bool)
-	signal.Notify(signalChan, os.Interrupt)
-	go func() {
-		for range signalChan {
-			fmt.Printf("\nReceived an interrupt, unsubscribing and closing connection...\n\n")
-			// Do not unsubscribe a durable on exit, except if asked to.
-			cleanupDone <- true
-		}
-	}()
-	<-cleanupDone
 }
+func (q *QueueWorker) Close(){
+	//Nothing todo
+	fmt.Printf("\nReceived an interrupt, Closing subscriptions ?\n\n")
+}
+
 
 func (q *QueueWorker) listenUptimeChannel(channel *amqp.Channel)  {
 	msgs, err := channel.Consume(

@@ -7,15 +7,24 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 )
 
 type Conf struct {
+	Debug bool `env:"DEBUG"`
+	ApiServer ApiserverConf
 	Database DatabaseConfig
 	Amq AmqConfig
 	Aws AwsConfig
 	Worker WorkerConfig
 	Alert AlertConfig
 	Realtime RealtimeConfig
+}
+type ApiserverConf struct {
+	Port         int           `env:"SERVER_PORT,required"`
+	TimeoutRead  duration `env:"SERVER_TIMEOUT_READ,required"`
+	TimeoutWrite duration `env:"SERVER_TIMEOUT_WRITE,required"`
+	TimeoutIdle  duration `env:"SERVER_TIMEOUT_IDLE,required"`
 }
 type AlertConfig struct {
 	EmailFrom string `env:"ALERT_EMAIL_FROM,required"`
@@ -53,6 +62,16 @@ type DatabaseConfig struct {
 	User string  `env:"MONGODB_USER,required"`
 	Password string  `env:"MONGODB_PASSWORD,required"`
 	Database string  `env:"MONGODB_DATABASE,required"`
+}
+
+type duration struct {
+	time.Duration
+}
+
+func (d *duration) UnmarshalText(text []byte) error {
+	var err error
+	d.Duration, err = time.ParseDuration(string(text))
+	return err
 }
 
 func AppConfig() *Conf {

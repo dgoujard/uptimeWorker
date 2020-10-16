@@ -44,7 +44,6 @@ func (d *DatabaseService) getLogtypesAvailable()  {
 func CreateDatabaseConnection(config *config.DatabaseConfig) *DatabaseService {
 	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI("mongodb://"+config.User+":"+config.Password+"@"+config.Server+":"+strconv.Itoa(config.Port)+"/"+config.Database))
-
 	err = client.Ping(ctx, readpref.Primary())
 	if err != nil {
 		log.Fatal(err)
