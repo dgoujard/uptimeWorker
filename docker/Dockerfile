@@ -30,6 +30,7 @@ WORKDIR /app
 # any further commands inside our /app
 # directory
 
+RUN go install github.com/markbates/pkger/cmd/pkger
 RUN go get -d -v  github.com/dgoujard/uptimeWorker/cmd/uptimeworker
 
 # Using go mod.
@@ -37,6 +38,7 @@ RUN go get -d -v  github.com/dgoujard/uptimeWorker/cmd/uptimeworker
 # RUN go mod verify
 
 # Build the binary.
+RUN pkger -o cmd/uptimeworker
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build  -ldflags="-w -s" -o uptimeworker  github.com/dgoujard/uptimeWorker/cmd/uptimeworker && chmod +x uptimeworker
 
 ############################

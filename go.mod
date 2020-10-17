@@ -17,6 +17,7 @@ require (
 	github.com/influxdata/influxdb-client-go v0.1.4
 	github.com/joeshaw/envdecode v0.0.0-20200121155833-099f1fc765bd
 	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0
+	github.com/markbates/pkger v0.17.1
 	github.com/rs/zerolog v1.20.0
 	github.com/streadway/amqp v0.0.0-20190827072141-edfb9018d271
 	github.com/tidwall/pretty v1.0.0 // indirect

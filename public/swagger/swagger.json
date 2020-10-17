@@ -1,0 +1,34 @@
+{
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "swagger": "2.0",
+  "info": {
+    "description": "API for Uptime API",
+    "version": "0.0.1"
+  },
+  "paths": {
+    "/healthz": {
+      "get": {
+        "description": "If the server is ready, return HTTP 200 code",
+        "tags": [
+          "get"
+        ],
+        "operationId": "liveness",
+        "responses": {
+          "200": {
+            "$ref": "#/responses/HealthRespOk"
+          }
+        }
+      }
+    }
+  },
+  "responses": {
+    "HealthRespOk": {
+      "description": "Success response"
+    }
+  }
+}
