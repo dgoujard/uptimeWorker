@@ -1,11 +1,13 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"github.com/dgoujard/uptimeWorker/app/app"
 	"github.com/dgoujard/uptimeWorker/app/router"
 	"github.com/dgoujard/uptimeWorker/app/services"
 	"github.com/dgoujard/uptimeWorker/config"
+	dbConn "github.com/dgoujard/uptimeWorker/adapter/gorm"
 	lr "github.com/dgoujard/uptimeWorker/util/logger"
 	vr "github.com/dgoujard/uptimeWorker/util/validator"
 	"log"
@@ -18,6 +20,11 @@ func main() {
 	var appConfig = config.AppConfig()
 	logger := lr.New(appConfig.Debug)
 
+	db, err := dbConn.New(appConfig)
+	if err != nil {
+		logger.Fatal().Err(err).Msg("")
+		return
+	}
 	databaseService := services.CreateDatabaseConnection(&appConfig.Database)
 	queueService := services.CreateQueueService(&appConfig.Amq)
 	awsService := services.CreateAwsService(&appConfig.Aws)
@@ -41,16 +48,16 @@ func main() {
 	queueWorker.StartAmqWatching()
 
 	var asWebServer = false
-	var s http.Server
+	var srv http.Server
 	if _, ok := cliOptions["withWebserver"]; ok {
 		asWebServer = true
 		validator := vr.New()
-		application := app.New(logger, validator)
+		application := app.New(logger, db, validator)
 		appRouter := router.New(application)
 		address := fmt.Sprintf(":%d", appConfig.ApiServer.Port)
 
 		logger.Info().Msgf("Starting server %v", address)
-		s := &http.Server{
+		srv := &http.Server{
 			Addr:         address,
 			Handler:      appRouter,
 			ReadTimeout:  appConfig.ApiServer.TimeoutRead.Duration,
@@ -58,7 +65,7 @@ func main() {
 			IdleTimeout:  appConfig.ApiServer.TimeoutIdle.Duration,
 		}
 		go func() {
-			if err := s.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 				logger.Fatal().Err(err).Msg("Server startup failed")
 			}
 		}()
@@ -71,7 +78,20 @@ func main() {
 		for range signalChan {
 			if asWebServer{
 				fmt.Printf("\nReceived an interrupt, Stoping webserver\n\n")
-				s.Close()
+				ctx, cancel := context.WithTimeout(context.Background(), appConfig.ApiServer.TimeoutIdle.Duration)
+				defer cancel()
+
+				if err := srv.Shutdown(ctx); err != nil {
+					logger.Warn().Err(err).Msg("Server shutdown failure")
+				}
+
+				sqlDB, err := db.DB()
+				if err == nil {
+					if err = sqlDB.Close(); err != nil {
+						logger.Warn().Err(err).Msg("Db connection closing failure")
+					}
+				}
+
 			}
 			queueWorker.Close()
 			cleanupDone <- true

@@ -2,6 +2,7 @@ package app
 
 import (
 	"github.com/go-playground/validator/v10"
+	"gorm.io/gorm"
 
 	"github.com/dgoujard/uptimeWorker/util/logger"
 )
@@ -18,18 +19,14 @@ const (
 type App struct {
 	logger    *logger.Logger
 	validator *validator.Validate
-	zones []string
-	username string
-	password string
+	db        *gorm.DB
 }
 
-func New(
-	logger *logger.Logger,
-	validator *validator.Validate,
-) *App {
+func New(logger *logger.Logger, db *gorm.DB, validator *validator.Validate, ) *App {
 	return &App{
 		logger:    logger,
 		validator: validator,
+		db: db,
 	}
 }
 

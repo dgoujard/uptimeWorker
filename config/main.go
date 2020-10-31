@@ -14,6 +14,7 @@ type Conf struct {
 	Debug bool `env:"DEBUG"`
 	ApiServer ApiserverConf
 	Database DatabaseConfig
+	Postgres PostegresConfig
 	Amq AmqConfig
 	Aws AwsConfig
 	Worker WorkerConfig
@@ -62,6 +63,13 @@ type DatabaseConfig struct {
 	User string  `env:"MONGODB_USER,required"`
 	Password string  `env:"MONGODB_PASSWORD,required"`
 	Database string  `env:"MONGODB_DATABASE,required"`
+}
+type PostegresConfig struct {
+	Server string  `env:"POSTGRES_SERVEUR,required"`
+	Port int  `env:"POSTGRES_PORT,required"`
+	User string  `env:"POSTGRES_USER,required"`
+	Password string  `env:"POSTGRES_PASSWORD,required"`
+	Database string  `env:"POSTGRES_DATABASE,required"`
 }
 
 type duration struct {
